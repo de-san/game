@@ -44,7 +44,7 @@ button {
     <p>
         💻 マウス左右移動<br>
         📱 指で左右スワイプ<br><br>
-        🔴 赤玉の中にはフェイントあり
+        🔴 フェイント赤玉に注意！
     </p>
     <button onclick="startGame()">START</button>
 </div>
@@ -68,7 +68,7 @@ window.addEventListener("resize", resizeCanvas);
 let player;
 let enemies;
 let gameRunning = false;
-let speed = 5;          // 初期スピードUP
+let speed = 6;   // 初期スピードUP
 let enemyInterval;
 
 function initGame() {
@@ -78,7 +78,7 @@ function initGame() {
         size: 30
     };
     enemies = [];
-    speed = 5;
+    speed = 6;
 }
 
 function spawnEnemy() {
@@ -88,8 +88,7 @@ function spawnEnemy() {
     let x = Math.random() * canvas.width;
     let y = -size;
 
-    // 30%の確率でフェイント敵
-    let isFeint = Math.random() < 0.3;
+    let isFeint = Math.random() < 0.3; // 30%でフェイント
 
     enemies.push({
         x,
@@ -113,28 +112,31 @@ canvas.addEventListener("touchmove", (e) => {
 function update() {
     if (!gameRunning) return;
 
+    // ★毎フレーム縦固定（完全横移動化）
+    player.y = canvas.height - 60;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 画面端制限
     if (player.x < player.size/2) player.x = player.size/2;
     if (player.x > canvas.width - player.size/2) player.x = canvas.width - player.size/2;
 
-    // プレイヤー
+    // プレイヤー描画
     ctx.fillStyle = "cyan";
     ctx.shadowBlur = 20;
     ctx.shadowColor = "cyan";
     ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
     ctx.shadowBlur = 0;
 
-    // 敵
+    // 敵描画
     ctx.fillStyle = "red";
 
     enemies.forEach((enemy, index) => {
         enemy.y += speed;
 
-        // フェイント処理（画面中央あたりで横ズレ）
+        // フェイント処理
         if (enemy.isFeint && !enemy.feinted && enemy.y > canvas.height / 3) {
-            enemy.x += (Math.random() - 0.5) * 200; // 横に大きくズレる
+            enemy.x += (Math.random() - 0.5) * 200;
             enemy.feinted = true;
         }
 
@@ -156,7 +158,8 @@ function update() {
         }
     });
 
-    speed += 0.003;  // 速度増加幅UP（後半かなり速い）
+    speed += 0.004;  // 加速強化（後半かなり速い）
+
     requestAnimationFrame(update);
 }
 
@@ -164,7 +167,7 @@ function startGame() {
     document.getElementById("startScreen").classList.add("hidden");
     initGame();
     gameRunning = true;
-    enemyInterval = setInterval(spawnEnemy, 600);
+    enemyInterval = setInterval(spawnEnemy, 550);
     update();
 }
 
@@ -174,6 +177,10 @@ function restartGame() {
     gameRunning = true;
     update();
 }
+</script>
+
+</body>
+</html>
 </script>
 
 </body>
