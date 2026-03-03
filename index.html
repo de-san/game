@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEON DODGE X - CHAOS</title>
+<title>NEON DODGE X - BULLET HELL</title>
 
 <style>
 body { margin:0; overflow:hidden; background:black; color:white; font-family:sans-serif; }
@@ -34,7 +34,7 @@ button { margin-top:15px; padding:10px 20px; font-size:16px; }
 
 <div id="startScreen" class="overlay">
     <h1>NEON DODGE X</h1>
-    <p>シールドは1回きり防御</p>
+    <p>弾幕復活版</p>
     <button onclick="startGame()">START</button>
 </div>
 
@@ -68,11 +68,7 @@ let shieldCount = 0;
 
 /* 初期化 */
 function initGame(){
-    player = {
-        x: canvas.width/2,
-        y: canvas.height-60,
-        size: 30
-    };
+    player = { x: canvas.width/2, y: canvas.height-60, size: 30 };
     enemies = [];
     items = [];
     globalSpeed = 2;
@@ -86,23 +82,33 @@ function updateHUD(){
         "SCORE: " + Math.floor(score) + " | SHIELD: " + shieldCount;
 }
 
-/* 敵生成 */
+/* 敵生成（弾幕強化） */
 function spawnEnemy(){
     if(!gameRunning) return;
-    if(enemies.length > 80) return;
+    if(enemies.length > 120) return; // 上限増加
 
-    for(let i=0;i<3;i++){
-        let size = 26;
+    for(let i=0;i<3;i++){  // 3体ずつ
+        let size = 24;
+
         enemies.push({
             x: Math.random()*canvas.width,
             y: -size - Math.random()*200,
             size: size,
-            baseSpeed: 4 + Math.random()*4,
-            speedFactor: Math.random()*0.05
+
+            baseSpeed: 5 + Math.random()*5,
+            speedFactor: 0.08 + Math.random()*0.05,
+
+            isFeint: Math.random() < 0.7,
+            feinted:false,
+            feintPower:(Math.random()*500)-250,
+
+            hasVerticalFeint: Math.random() < 0.6,
+            vFeinted:false,
+            vTimer:0
         });
     }
 
-    if(Math.random() < 0.1){
+    if(Math.random() < 0.15){
         items.push({
             x: Math.random()*canvas.width,
             y: -20,
@@ -146,9 +152,7 @@ function update(){
     if(player.x > canvas.width-player.size/2)
         player.x = canvas.width-player.size/2;
 
-    /* シールド所持中は黄色 */
     ctx.fillStyle = shieldCount > 0 ? "yellow" : "cyan";
-
     ctx.fillRect(
         player.x-player.size/2,
         player.y-player.size/2,
@@ -156,15 +160,34 @@ function update(){
         player.size
     );
 
-    /* 敵 */
     ctx.fillStyle="red";
+
     for(let i=enemies.length-1;i>=0;i--){
         let enemy = enemies[i];
+
         let dynamicSpeed =
             enemy.baseSpeed +
-            Math.sin(enemy.y * enemy.speedFactor) * 2;
+            Math.sin(enemy.y * enemy.speedFactor) * 3;
 
-        enemy.y += dynamicSpeed + globalSpeed;
+        if(enemy.hasVerticalFeint && !enemy.vFeinted && enemy.y > canvas.height/4){
+            enemy.vFeinted = true;
+            enemy.vTimer = 12;
+        }
+
+        if(enemy.vTimer > 0){
+            dynamicSpeed *= 0.2;
+            enemy.vTimer--;
+        }
+        else if(enemy.vFeinted){
+            dynamicSpeed *= 2.8;
+        }
+
+        enemy.y += dynamicSpeed + globalSpeed*0.5;
+
+        if(enemy.isFeint && !enemy.feinted && enemy.y > canvas.height/3){
+            enemy.x += enemy.feintPower;
+            enemy.feinted = true;
+        }
 
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.size/2, 0, Math.PI*2);
@@ -216,10 +239,10 @@ function update(){
             items.splice(i,1);
     }
 
-    score += 0.1;
+    score += 0.15;
     updateHUD();
 
-    globalSpeed += 0.002;
+    globalSpeed += 0.003;
 
     requestAnimationFrame(update);
 }
@@ -230,11 +253,10 @@ function startGame(){
     initGame();
     gameRunning = true;
     lastMouseX = null;
-    enemyInterval = setInterval(spawnEnemy, 300);
+    enemyInterval = setInterval(spawnEnemy, 220); // 出現高速化
     update();
 }
 
-/* リスタート */
 function restartGame(){
     document.getElementById("gameOver").classList.add("hidden");
     initGame();
