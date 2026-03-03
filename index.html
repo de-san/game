@@ -68,7 +68,7 @@ window.addEventListener("resize", resizeCanvas);
 let player;
 let enemies;
 let gameRunning = false;
-let speed = 6;   // 初期スピードUP
+let speed = 6;
 let enemyInterval;
 
 function initGame() {
@@ -88,7 +88,7 @@ function spawnEnemy() {
     let x = Math.random() * canvas.width;
     let y = -size;
 
-    let isFeint = Math.random() < 0.3; // 30%でフェイント
+    let isFeint = Math.random() < 0.3;
 
     enemies.push({
         x,
@@ -99,33 +99,49 @@ function spawnEnemy() {
     });
 }
 
+/* ===== 入力処理（canvas基準に変換）===== */
+
 canvas.addEventListener("mousemove", (e) => {
-    player.x = e.clientX;
+    if (!gameRunning) return;
+
+    const rect = canvas.getBoundingClientRect();
+    player.x = e.clientX - rect.left;
 });
 
 canvas.addEventListener("touchmove", (e) => {
+    if (!gameRunning) return;
     e.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
     let touch = e.touches[0];
-    player.x = touch.clientX;
+    player.x = touch.clientX - rect.left;
 });
+
+/* ===== ゲームループ ===== */
 
 function update() {
     if (!gameRunning) return;
 
-    // ★毎フレーム縦固定（完全横移動化）
+    // ★毎フレーム縦固定（絶対に上下に動かない）
     player.y = canvas.height - 60;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 画面端制限
     if (player.x < player.size/2) player.x = player.size/2;
-    if (player.x > canvas.width - player.size/2) player.x = canvas.width - player.size/2;
+    if (player.x > canvas.width - player.size/2)
+        player.x = canvas.width - player.size/2;
 
     // プレイヤー描画
     ctx.fillStyle = "cyan";
     ctx.shadowBlur = 20;
     ctx.shadowColor = "cyan";
-    ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+    ctx.fillRect(
+        player.x - player.size/2,
+        player.y - player.size/2,
+        player.size,
+        player.size
+    );
     ctx.shadowBlur = 0;
 
     // 敵描画
@@ -158,10 +174,12 @@ function update() {
         }
     });
 
-    speed += 0.004;  // 加速強化（後半かなり速い）
+    speed += 0.004;  // 強め加速
 
     requestAnimationFrame(update);
 }
+
+/* ===== 画面制御 ===== */
 
 function startGame() {
     document.getElementById("startScreen").classList.add("hidden");
@@ -177,10 +195,6 @@ function restartGame() {
     gameRunning = true;
     update();
 }
-</script>
-
-</body>
-</html>
 </script>
 
 </body>
