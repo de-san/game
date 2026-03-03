@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Dodge X HARD</title>
+<title>Neon Dodge X FINAL</title>
 
 <style>
 body {
     margin: 0;
     overflow: hidden;
     background: black;
-    touch-action: none;
     font-family: sans-serif;
     color: white;
 }
@@ -29,9 +28,7 @@ button {
     margin-top: 15px;
     padding: 10px 20px;
     font-size: 16px;
-    cursor: pointer;
 }
-
 .hidden { display: none; }
 </style>
 </head>
@@ -42,9 +39,8 @@ button {
 <div id="startScreen" class="overlay">
     <h1>NEON DODGE X</h1>
     <p>
-        💻 マウス左右移動<br>
-        📱 指で左右スワイプ<br><br>
-        🔴 フェイント赤玉に注意！
+        左右だけで回避せよ<br>
+        フェイントあり
     </p>
     <button onclick="startGame()">START</button>
 </div>
@@ -68,7 +64,7 @@ window.addEventListener("resize", resizeCanvas);
 let player;
 let enemies;
 let gameRunning = false;
-let speed = 6;
+let speed;
 let enemyInterval;
 
 function initGame() {
@@ -85,36 +81,46 @@ function spawnEnemy() {
     if (!gameRunning) return;
 
     let size = 30;
-    let x = Math.random() * canvas.width;
-    let y = -size;
-
-    let isFeint = Math.random() < 0.3;
-
     enemies.push({
-        x,
-        y,
-        size,
-        isFeint,
+        x: Math.random() * canvas.width,
+        y: -size,
+        size: size,
+        isFeint: Math.random() < 0.3,
         feinted: false
     });
 }
 
-/* ===== 入力処理（canvas基準に変換）===== */
+/* ===== 横差分制御 ===== */
+
+let lastMouseX = null;
 
 canvas.addEventListener("mousemove", (e) => {
     if (!gameRunning) return;
 
-    const rect = canvas.getBoundingClientRect();
-    player.x = e.clientX - rect.left;
+    if (lastMouseX !== null) {
+        let dx = e.clientX - lastMouseX;
+        player.x += dx;
+    }
+
+    lastMouseX = e.clientX;
+});
+
+canvas.addEventListener("mouseleave", () => {
+    lastMouseX = null;
 });
 
 canvas.addEventListener("touchmove", (e) => {
     if (!gameRunning) return;
     e.preventDefault();
 
-    const rect = canvas.getBoundingClientRect();
-    let touch = e.touches[0];
-    player.x = touch.clientX - rect.left;
+    let touchX = e.touches[0].clientX;
+
+    if (lastMouseX !== null) {
+        let dx = touchX - lastMouseX;
+        player.x += dx;
+    }
+
+    lastMouseX = touchX;
 });
 
 /* ===== ゲームループ ===== */
@@ -122,69 +128,63 @@ canvas.addEventListener("touchmove", (e) => {
 function update() {
     if (!gameRunning) return;
 
-    // ★毎フレーム縦固定（絶対に上下に動かない）
+    // 縦は完全固定
     player.y = canvas.height - 60;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 画面端制限
+    // 端制限
     if (player.x < player.size/2) player.x = player.size/2;
     if (player.x > canvas.width - player.size/2)
         player.x = canvas.width - player.size/2;
 
-    // プレイヤー描画
+    // プレイヤー
     ctx.fillStyle = "cyan";
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = "cyan";
     ctx.fillRect(
         player.x - player.size/2,
         player.y - player.size/2,
         player.size,
         player.size
     );
-    ctx.shadowBlur = 0;
 
-    // 敵描画
+    // 敵
     ctx.fillStyle = "red";
-
     enemies.forEach((enemy, index) => {
         enemy.y += speed;
 
-        // フェイント処理
-        if (enemy.isFeint && !enemy.feinted && enemy.y > canvas.height / 3) {
+        // フェイント
+        if (enemy.isFeint && !enemy.feinted && enemy.y > canvas.height/3) {
             enemy.x += (Math.random() - 0.5) * 200;
             enemy.feinted = true;
         }
 
         ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, enemy.size/2, 0, Math.PI * 2);
+        ctx.arc(enemy.x, enemy.y, enemy.size/2, 0, Math.PI*2);
         ctx.fill();
 
         let dx = player.x - enemy.x;
         let dy = player.y - enemy.y;
-        let distance = Math.sqrt(dx*dx + dy*dy);
+        let dist = Math.sqrt(dx*dx + dy*dy);
 
-        if (distance < player.size/2 + enemy.size/2) {
+        if (dist < player.size/2 + enemy.size/2) {
             gameRunning = false;
             document.getElementById("gameOver").classList.remove("hidden");
         }
 
-        if (enemy.y > canvas.height) {
+        if (enemy.y > canvas.height)
             enemies.splice(index, 1);
-        }
     });
 
-    speed += 0.004;  // 強め加速
+    speed += 0.004;
 
     requestAnimationFrame(update);
 }
-
-/* ===== 画面制御 ===== */
 
 function startGame() {
     document.getElementById("startScreen").classList.add("hidden");
     initGame();
     gameRunning = true;
+    lastMouseX = null;
     enemyInterval = setInterval(spawnEnemy, 550);
     update();
 }
@@ -193,6 +193,7 @@ function restartGame() {
     document.getElementById("gameOver").classList.add("hidden");
     initGame();
     gameRunning = true;
+    lastMouseX = null;
     update();
 }
 </script>
