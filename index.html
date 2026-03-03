@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Dodge X CHAOS</title>
+<title>Neon Dodge X OVERLOAD</title>
 
 <style>
 body { margin:0; overflow:hidden; background:black; color:white; font-family:sans-serif; }
@@ -23,8 +23,8 @@ button { margin-top:15px; padding:10px 20px; font-size:16px; }
 <canvas id="gameCanvas"></canvas>
 
 <div id="startScreen" class="overlay">
-    <h1>NEON DODGE X - CHAOS</h1>
-    <p>敵増量 + フェイント幅ランダム</p>
+    <h1>NEON DODGE X - OVERLOAD</h1>
+    <p>敵大量出現モード</p>
     <button onclick="startGame()">START</button>
 </div>
 
@@ -55,25 +55,29 @@ function initGame(){
         size: 30
     };
     enemies = [];
-    speed = 6;
+    speed = 7; // 初速さらにUP
 }
 
 function spawnEnemy(){
     if(!gameRunning) return;
 
-    // 最大数制御（増量）
-    if(enemies.length > 25) return;
+    // 最大数さらに増加
+    if(enemies.length > 60) return;
 
-    let size = 28;
+    // 1回で複数生成
+    for(let i=0; i<3; i++){
 
-    enemies.push({
-        x: Math.random()*canvas.width,
-        y: -size,
-        size: size,
-        isFeint: Math.random() < 0.5,   // フェイント確率UP
-        feinted:false,
-        feintPower: (Math.random()*300) - 150 // -150〜150 のランダム幅
-    });
+        let size = 26;
+
+        enemies.push({
+            x: Math.random()*canvas.width,
+            y: -size - Math.random()*200,
+            size: size,
+            isFeint: Math.random() < 0.6,
+            feinted:false,
+            feintPower:(Math.random()*400)-200
+        });
+    }
 }
 
 /* 差分横移動 */
@@ -107,12 +111,10 @@ function update(){
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // 端制限
     if(player.x < player.size/2) player.x = player.size/2;
     if(player.x > canvas.width-player.size/2)
         player.x = canvas.width-player.size/2;
 
-    // プレイヤー
     ctx.fillStyle="cyan";
     ctx.fillRect(
         player.x-player.size/2,
@@ -123,10 +125,12 @@ function update(){
 
     ctx.fillStyle="red";
 
-    enemies.forEach((enemy,index)=>{
+    // 逆ループで安全削除
+    for(let i=enemies.length-1; i>=0; i--){
+
+        let enemy = enemies[i];
         enemy.y += speed;
 
-        // フェイント処理（幅に差）
         if(enemy.isFeint && !enemy.feinted && enemy.y > canvas.height/3){
             enemy.x += enemy.feintPower;
             enemy.feinted = true;
@@ -146,10 +150,10 @@ function update(){
         }
 
         if(enemy.y > canvas.height)
-            enemies.splice(index,1);
-    });
+            enemies.splice(i,1);
+    }
 
-    speed += 0.005; // さらに加速強化
+    speed += 0.006; // さらに加速
 
     requestAnimationFrame(update);
 }
@@ -159,7 +163,7 @@ function startGame(){
     initGame();
     gameRunning=true;
     lastMouseX=null;
-    enemyInterval=setInterval(spawnEnemy, 350); // 出現頻度UP
+    enemyInterval=setInterval(spawnEnemy, 250); // 出現超高速
     update();
 }
 
