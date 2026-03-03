@@ -3,33 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Dodge X FINAL</title>
+<title>Neon Dodge X CHAOS</title>
 
 <style>
-body {
-    margin: 0;
-    overflow: hidden;
-    background: black;
-    font-family: sans-serif;
-    color: white;
-}
-
-canvas { display: block; }
-
+body { margin:0; overflow:hidden; background:black; color:white; font-family:sans-serif; }
+canvas { display:block; }
 .overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
 }
-
-button {
-    margin-top: 15px;
-    padding: 10px 20px;
-    font-size: 16px;
-}
-.hidden { display: none; }
+button { margin-top:15px; padding:10px 20px; font-size:16px; }
+.hidden { display:none; }
 </style>
 </head>
 <body>
@@ -37,11 +23,8 @@ button {
 <canvas id="gameCanvas"></canvas>
 
 <div id="startScreen" class="overlay">
-    <h1>NEON DODGE X</h1>
-    <p>
-        左右だけで回避せよ<br>
-        フェイントあり
-    </p>
+    <h1>NEON DODGE X - CHAOS</h1>
+    <p>敵増量 + フェイント幅ランダム</p>
     <button onclick="startGame()">START</button>
 </div>
 
@@ -54,107 +37,98 @@ button {
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-function resizeCanvas() {
+function resizeCanvas(){
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-let player;
-let enemies;
-let gameRunning = false;
-let speed;
+let player, enemies, speed, gameRunning=false;
 let enemyInterval;
+let lastMouseX=null;
 
-function initGame() {
+function initGame(){
     player = {
-        x: canvas.width / 2,
-        y: canvas.height - 60,
+        x: canvas.width/2,
+        y: canvas.height-60,
         size: 30
     };
     enemies = [];
     speed = 6;
 }
 
-function spawnEnemy() {
-    if (!gameRunning) return;
+function spawnEnemy(){
+    if(!gameRunning) return;
 
-    let size = 30;
+    // 最大数制御（増量）
+    if(enemies.length > 25) return;
+
+    let size = 28;
+
     enemies.push({
-        x: Math.random() * canvas.width,
+        x: Math.random()*canvas.width,
         y: -size,
         size: size,
-        isFeint: Math.random() < 0.3,
-        feinted: false
+        isFeint: Math.random() < 0.5,   // フェイント確率UP
+        feinted:false,
+        feintPower: (Math.random()*300) - 150 // -150〜150 のランダム幅
     });
 }
 
-/* ===== 横差分制御 ===== */
+/* 差分横移動 */
 
-let lastMouseX = null;
-
-canvas.addEventListener("mousemove", (e) => {
-    if (!gameRunning) return;
-
-    if (lastMouseX !== null) {
-        let dx = e.clientX - lastMouseX;
-        player.x += dx;
+canvas.addEventListener("mousemove", e=>{
+    if(!gameRunning) return;
+    if(lastMouseX!==null){
+        player.x += e.clientX - lastMouseX;
     }
-
     lastMouseX = e.clientX;
 });
 
-canvas.addEventListener("mouseleave", () => {
-    lastMouseX = null;
-});
+canvas.addEventListener("mouseleave", ()=> lastMouseX=null);
 
-canvas.addEventListener("touchmove", (e) => {
-    if (!gameRunning) return;
+canvas.addEventListener("touchmove", e=>{
+    if(!gameRunning) return;
     e.preventDefault();
-
     let touchX = e.touches[0].clientX;
-
-    if (lastMouseX !== null) {
-        let dx = touchX - lastMouseX;
-        player.x += dx;
+    if(lastMouseX!==null){
+        player.x += touchX - lastMouseX;
     }
-
     lastMouseX = touchX;
 });
 
-/* ===== ゲームループ ===== */
+/* ゲームループ */
 
-function update() {
-    if (!gameRunning) return;
+function update(){
+    if(!gameRunning) return;
 
-    // 縦は完全固定
-    player.y = canvas.height - 60;
+    player.y = canvas.height-60;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
     // 端制限
-    if (player.x < player.size/2) player.x = player.size/2;
-    if (player.x > canvas.width - player.size/2)
-        player.x = canvas.width - player.size/2;
+    if(player.x < player.size/2) player.x = player.size/2;
+    if(player.x > canvas.width-player.size/2)
+        player.x = canvas.width-player.size/2;
 
     // プレイヤー
-    ctx.fillStyle = "cyan";
+    ctx.fillStyle="cyan";
     ctx.fillRect(
-        player.x - player.size/2,
-        player.y - player.size/2,
+        player.x-player.size/2,
+        player.y-player.size/2,
         player.size,
         player.size
     );
 
-    // 敵
-    ctx.fillStyle = "red";
-    enemies.forEach((enemy, index) => {
+    ctx.fillStyle="red";
+
+    enemies.forEach((enemy,index)=>{
         enemy.y += speed;
 
-        // フェイント
-        if (enemy.isFeint && !enemy.feinted && enemy.y > canvas.height/3) {
-            enemy.x += (Math.random() - 0.5) * 200;
+        // フェイント処理（幅に差）
+        if(enemy.isFeint && !enemy.feinted && enemy.y > canvas.height/3){
+            enemy.x += enemy.feintPower;
             enemy.feinted = true;
         }
 
@@ -166,34 +140,34 @@ function update() {
         let dy = player.y - enemy.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
 
-        if (dist < player.size/2 + enemy.size/2) {
-            gameRunning = false;
+        if(dist < player.size/2 + enemy.size/2){
+            gameRunning=false;
             document.getElementById("gameOver").classList.remove("hidden");
         }
 
-        if (enemy.y > canvas.height)
-            enemies.splice(index, 1);
+        if(enemy.y > canvas.height)
+            enemies.splice(index,1);
     });
 
-    speed += 0.004;
+    speed += 0.005; // さらに加速強化
 
     requestAnimationFrame(update);
 }
 
-function startGame() {
+function startGame(){
     document.getElementById("startScreen").classList.add("hidden");
     initGame();
-    gameRunning = true;
-    lastMouseX = null;
-    enemyInterval = setInterval(spawnEnemy, 550);
+    gameRunning=true;
+    lastMouseX=null;
+    enemyInterval=setInterval(spawnEnemy, 350); // 出現頻度UP
     update();
 }
 
-function restartGame() {
+function restartGame(){
     document.getElementById("gameOver").classList.add("hidden");
     initGame();
-    gameRunning = true;
-    lastMouseX = null;
+    gameRunning=true;
+    lastMouseX=null;
     update();
 }
 </script>
