@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Dodge Game</title>
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: black;
+    touch-action: none;
+}
+
+canvas {
+    display: block;
+}
+
+#gameOver {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 32px;
+    font-family: sans-serif;
+    text-align: center;
+    display: none;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="gameOver">
+    GAME OVER<br>
+    <button onclick="restartGame()">RESTART</button>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+let player;
+let enemies;
+let gameRunning;
+let speed;
+
+function initGame() {
+    player = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        size: 25
+    };
+
+    enemies = [];
+    gameRunning = true;
+    speed = 2;
+    document.getElementById("gameOver").style.display = "none";
+}
+
+function spawnEnemy() {
+    if (!gameRunning) return;
+    let size = 25;
+    let x = Math.random() * canvas.width;
+    let y = -size;
+    enemies.push({ x, y, size });
+}
+
+setInterval(spawnEnemy, 800);
+
+// PC操作
+canvas.addEventListener("mousemove", (e) => {
+    player.x = e.clientX;
+    player.y = e.clientY;
+});
+
+// スマホ操作
+canvas.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    let touch = e.touches[0];
+    player.x = touch.clientX;
+    player.y = touch.clientY;
+});
+
+function update() {
+    if (!gameRunning) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // プレイヤー
+    ctx.fillStyle = "cyan";
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "cyan";
+    ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+    ctx.shadowBlur = 0;
+
+    // 敵
+    ctx.fillStyle = "red";
+    enemies.forEach((enemy, index) => {
+        enemy.y += speed;
+
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.size/2, 0, Math.PI * 2);
+        ctx.fill();
+
+        let dx = player.x - enemy.x;
+        let dy = player.y - enemy.y;
+        let distance = Math.sqrt(dx*dx + dy*dy);
+
+        if (distance < player.size/2 + enemy.size/2) {
+            gameRunning = false;
+            document.getElementById("gameOver").style.display = "block";
+        }
+
+        if (enemy.y > canvas.height) {
+            enemies.splice(index, 1);
+        }
+    });
+
+    speed += 0.0005;
+
+    requestAnimationFrame(update);
+}
+
+function restartGame() {
+    initGame();
+    update();
+}
+
+initGame();
+update();
+</script>
+
+</body>
+</html>
