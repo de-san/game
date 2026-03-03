@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Dodge Game</title>
+<title>Neon Dodge X HARD</title>
 
 <style>
 body {
@@ -15,9 +15,7 @@ body {
     color: white;
 }
 
-canvas {
-    display: block;
-}
+canvas { display: block; }
 
 .overlay {
     position: absolute;
@@ -34,28 +32,23 @@ button {
     cursor: pointer;
 }
 
-.hidden {
-    display: none;
-}
+.hidden { display: none; }
 </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- 操作説明画面 -->
 <div id="startScreen" class="overlay">
-    <h1>NEON DODGE</h1>
+    <h1>NEON DODGE X</h1>
     <p>
-        【操作方法】<br><br>
-        💻 PC：マウスで移動<br>
-        📱 スマホ：指でスワイプ<br><br>
-        🔴 赤いボールを避け続けろ！
+        💻 マウス左右移動<br>
+        📱 指で左右スワイプ<br><br>
+        🔴 赤玉の中にはフェイントあり
     </p>
     <button onclick="startGame()">START</button>
 </div>
 
-<!-- ゲームオーバー -->
 <div id="gameOver" class="overlay hidden">
     <h1>GAME OVER</h1>
     <button onclick="restartGame()">RESTART</button>
@@ -75,45 +68,56 @@ window.addEventListener("resize", resizeCanvas);
 let player;
 let enemies;
 let gameRunning = false;
-let speed = 2;
+let speed = 5;          // 初期スピードUP
 let enemyInterval;
 
 function initGame() {
     player = {
         x: canvas.width / 2,
-        y: canvas.height / 2,
-        size: 25
+        y: canvas.height - 60,
+        size: 30
     };
     enemies = [];
-    speed = 2;
+    speed = 5;
 }
 
 function spawnEnemy() {
     if (!gameRunning) return;
-    let size = 25;
+
+    let size = 30;
     let x = Math.random() * canvas.width;
     let y = -size;
-    enemies.push({ x, y, size });
+
+    // 30%の確率でフェイント敵
+    let isFeint = Math.random() < 0.3;
+
+    enemies.push({
+        x,
+        y,
+        size,
+        isFeint,
+        feinted: false
+    });
 }
 
-// 操作
 canvas.addEventListener("mousemove", (e) => {
     player.x = e.clientX;
-    player.y = e.clientY;
 });
 
 canvas.addEventListener("touchmove", (e) => {
     e.preventDefault();
     let touch = e.touches[0];
     player.x = touch.clientX;
-    player.y = touch.clientY;
 });
 
-// ゲームループ
 function update() {
     if (!gameRunning) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 画面端制限
+    if (player.x < player.size/2) player.x = player.size/2;
+    if (player.x > canvas.width - player.size/2) player.x = canvas.width - player.size/2;
 
     // プレイヤー
     ctx.fillStyle = "cyan";
@@ -124,8 +128,15 @@ function update() {
 
     // 敵
     ctx.fillStyle = "red";
+
     enemies.forEach((enemy, index) => {
         enemy.y += speed;
+
+        // フェイント処理（画面中央あたりで横ズレ）
+        if (enemy.isFeint && !enemy.feinted && enemy.y > canvas.height / 3) {
+            enemy.x += (Math.random() - 0.5) * 200; // 横に大きくズレる
+            enemy.feinted = true;
+        }
 
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.size/2, 0, Math.PI * 2);
@@ -145,7 +156,7 @@ function update() {
         }
     });
 
-    speed += 0.0005;
+    speed += 0.003;  // 速度増加幅UP（後半かなり速い）
     requestAnimationFrame(update);
 }
 
@@ -153,7 +164,7 @@ function startGame() {
     document.getElementById("startScreen").classList.add("hidden");
     initGame();
     gameRunning = true;
-    enemyInterval = setInterval(spawnEnemy, 800);
+    enemyInterval = setInterval(spawnEnemy, 600);
     update();
 }
 
