@@ -11,28 +11,31 @@ body {
     overflow: hidden;
     background: black;
     touch-action: none;
+    font-family: sans-serif;
+    color: white;
 }
 
 canvas {
     display: block;
 }
 
-#gameOver {
+.overlay {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: white;
-    font-size: 32px;
-    font-family: sans-serif;
     text-align: center;
-    display: none;
 }
 
 button {
     margin-top: 15px;
     padding: 10px 20px;
     font-size: 16px;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
 }
 </style>
 </head>
@@ -40,8 +43,21 @@ button {
 
 <canvas id="gameCanvas"></canvas>
 
-<div id="gameOver">
-    GAME OVER<br>
+<!-- 操作説明画面 -->
+<div id="startScreen" class="overlay">
+    <h1>NEON DODGE</h1>
+    <p>
+        【操作方法】<br><br>
+        💻 PC：マウスで移動<br>
+        📱 スマホ：指でスワイプ<br><br>
+        🔴 赤いボールを避け続けろ！
+    </p>
+    <button onclick="startGame()">START</button>
+</div>
+
+<!-- ゲームオーバー -->
+<div id="gameOver" class="overlay hidden">
+    <h1>GAME OVER</h1>
     <button onclick="restartGame()">RESTART</button>
 </div>
 
@@ -58,8 +74,9 @@ window.addEventListener("resize", resizeCanvas);
 
 let player;
 let enemies;
-let gameRunning;
-let speed;
+let gameRunning = false;
+let speed = 2;
+let enemyInterval;
 
 function initGame() {
     player = {
@@ -67,11 +84,8 @@ function initGame() {
         y: canvas.height / 2,
         size: 25
     };
-
     enemies = [];
-    gameRunning = true;
     speed = 2;
-    document.getElementById("gameOver").style.display = "none";
 }
 
 function spawnEnemy() {
@@ -82,15 +96,12 @@ function spawnEnemy() {
     enemies.push({ x, y, size });
 }
 
-setInterval(spawnEnemy, 800);
-
-// PC操作
+// 操作
 canvas.addEventListener("mousemove", (e) => {
     player.x = e.clientX;
     player.y = e.clientY;
 });
 
-// スマホ操作
 canvas.addEventListener("touchmove", (e) => {
     e.preventDefault();
     let touch = e.touches[0];
@@ -98,6 +109,7 @@ canvas.addEventListener("touchmove", (e) => {
     player.y = touch.clientY;
 });
 
+// ゲームループ
 function update() {
     if (!gameRunning) return;
 
@@ -125,7 +137,7 @@ function update() {
 
         if (distance < player.size/2 + enemy.size/2) {
             gameRunning = false;
-            document.getElementById("gameOver").style.display = "block";
+            document.getElementById("gameOver").classList.remove("hidden");
         }
 
         if (enemy.y > canvas.height) {
@@ -134,17 +146,23 @@ function update() {
     });
 
     speed += 0.0005;
-
     requestAnimationFrame(update);
 }
 
-function restartGame() {
+function startGame() {
+    document.getElementById("startScreen").classList.add("hidden");
     initGame();
+    gameRunning = true;
+    enemyInterval = setInterval(spawnEnemy, 800);
     update();
 }
 
-initGame();
-update();
+function restartGame() {
+    document.getElementById("gameOver").classList.add("hidden");
+    initGame();
+    gameRunning = true;
+    update();
+}
 </script>
 
 </body>
