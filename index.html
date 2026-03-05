@@ -26,11 +26,23 @@ button { margin-top:15px; padding:10px 20px; font-size:16px; }
     left:10px;
     font-size:16px;
 }
+
+.reviveText {
+    position:absolute;
+    top:40%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:48px;
+    color:lime;
+    display:none;
+}
 </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
+
+<div id="reviveText" class="reviveText">REVIVE!</div>
 
 <div id="startScreen" class="overlay">
     <h1>NEON DODGE X</h1>
@@ -88,7 +100,6 @@ function initGame(){
     gameTime = 0;
 
     highScore = localStorage.getItem("neonHighScore") || 0;
-
     updateHUD();
 }
 
@@ -102,25 +113,23 @@ function updateHUD(){
 /* 敵生成 */
 function spawnEnemy(){
     if(!gameRunning) return;
-    if(enemies.length > 160) return;
+    if(enemies.length > 180) return;
 
     let spawnCount = Math.min(6, 3 + Math.floor(gameTime / 800));
 
     for(let i=0;i<spawnCount;i++){
-        let size = 24;
+
+        let size = 16 + Math.random() * 24;
 
         enemies.push({
             x: Math.random()*canvas.width,
             y: -size - Math.random()*200,
             size: size,
-
-            baseSpeed: 5 + Math.random()*4,
+            baseSpeed: (6 + Math.random()*4) * (28 / size),
             speedFactor: 0.07 + Math.random()*0.04,
-
             isFeint: Math.random() < 0.6,
             feinted:false,
             feintPower:(Math.random()*300)-150,
-
             hasVerticalFeint: Math.random() < 0.5,
             vFeinted:false,
             vTimer:0
@@ -137,7 +146,7 @@ function spawnEnemy(){
     }
 }
 
-/* 横移動のみ */
+/* 横移動 */
 canvas.addEventListener("mousemove", e=>{
     if(!gameRunning) return;
     const rect = canvas.getBoundingClientRect();
@@ -165,7 +174,6 @@ function update(){
     if(!gameRunning) return;
 
     player.y = canvas.height-60;
-
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
     if(player.x < player.size/2) player.x = player.size/2;
@@ -224,6 +232,16 @@ function update(){
                 updateHUD();
                 continue;
             } else {
+
+                // 🔥 0.3%復活判定
+                if(Math.random() < 0.003){
+                    shieldCount = 1;
+                    enemies.splice(i,1);
+                    showRevive();
+                    updateHUD();
+                    continue;
+                }
+
                 gameRunning = false;
 
                 if(score > highScore){
@@ -285,7 +303,12 @@ function update(){
     requestAnimationFrame(update);
 }
 
-/* 開始 */
+function showRevive(){
+    const revive = document.getElementById("reviveText");
+    revive.style.display = "block";
+    setTimeout(()=>{ revive.style.display = "none"; }, 800);
+}
+
 function startGame(){
     document.getElementById("startScreen").classList.add("hidden");
     initGame();
@@ -303,5 +326,7 @@ function restartGame(){
 }
 </script>
 
+</body>
+</html>
 </body>
 </html>
