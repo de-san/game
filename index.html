@@ -82,10 +82,13 @@ let shieldCount = 0;
 const MAX_SHIELD = 3;
 
 let globalSpeed = 2;
-
 let spawnTimer = 0;
 let spawnInterval = 240;
 let gameTime = 0;
+
+// ★ 無敵用
+let isInvincible = false;
+let invincibleTimer = 0;
 
 /* 初期化 */
 function initGame(){
@@ -98,6 +101,8 @@ function initGame(){
     spawnTimer = 0;
     spawnInterval = 240;
     gameTime = 0;
+    isInvincible = false;
+    invincibleTimer = 0;
 
     highScore = localStorage.getItem("neonHighScore") || 0;
     updateHUD();
@@ -119,7 +124,7 @@ function spawnEnemy(){
 
     for(let i=0;i<spawnCount;i++){
 
-        let size = 16 + Math.random() * 24; // 16〜40
+        let size = 16 + Math.random() * 24;
 
         enemies.push({
             x: Math.random()*canvas.width,
@@ -146,7 +151,7 @@ function spawnEnemy(){
     }
 }
 
-/* 横移動 */
+/* マウス移動 */
 canvas.addEventListener("mousemove", e=>{
     if(!gameRunning) return;
     const rect = canvas.getBoundingClientRect();
@@ -180,7 +185,15 @@ function update(){
     if(player.x > canvas.width-player.size/2)
         player.x = canvas.width-player.size/2;
 
-    ctx.fillStyle = shieldCount > 0 ? "yellow" : "cyan";
+    // プレイヤー描画（無敵中は白）
+    if(isInvincible){
+        ctx.fillStyle = "white";
+    } else if(shieldCount > 0){
+        ctx.fillStyle = "yellow";
+    } else {
+        ctx.fillStyle = "cyan";
+    }
+
     ctx.fillRect(
         player.x-player.size/2,
         player.y-player.size/2,
@@ -225,7 +238,9 @@ function update(){
         let dy = player.y - enemy.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
 
-        if(dist < player.size/2 + enemy.size/2){
+        // ★ 無敵中は当たらない
+        if(!isInvincible && dist < player.size/2 + enemy.size/2){
+
             if(shieldCount > 0){
                 shieldCount--;
                 enemies.splice(i,1);
@@ -233,10 +248,14 @@ function update(){
                 continue;
             } else {
 
-                // 🔥 50%復活
                 if(Math.random() < 0.5){
                     shieldCount = 1;
                     enemies.splice(i,1);
+
+                    // ★ 無敵5秒
+                    isInvincible = true;
+                    invincibleTimer = 300;
+
                     showRevive();
                     updateHUD();
                     continue;
@@ -285,6 +304,14 @@ function update(){
 
         if(item.y > canvas.height)
             items.splice(i,1);
+    }
+
+    // 無敵時間処理
+    if(isInvincible){
+        invincibleTimer--;
+        if(invincibleTimer <= 0){
+            isInvincible = false;
+        }
     }
 
     gameTime++;
