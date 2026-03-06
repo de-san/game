@@ -63,11 +63,11 @@ display:none;
 
 <p>
 【ルール】<br>
-・マウス / 指で左右移動<br>
-・赤い敵を避け続ける<br>
-・黄色アイテムでシールド（最大3）<br>
-・被弾時50%で復活＋5秒無敵<br>
-・紫の敵は破裂して弾幕を放つ
+マウス / 指で左右移動<br>
+赤い敵を避け続ける<br>
+黄色アイテムでシールド（最大3）<br>
+被弾時50%で復活＋5秒無敵<br>
+紫の敵は途中で爆発して弾幕
 </p>
 
 <button onclick="startGame()">START</button>
@@ -105,7 +105,7 @@ let highScore=0;
 let shieldCount=0;
 const MAX_SHIELD=3;
 
-let globalSpeed=1.6; // ★少し遅く
+let globalSpeed=1.6;
 
 let spawnTimer=0;
 let spawnInterval=240;
@@ -157,8 +157,7 @@ for(let i=0;i<spawnCount;i++){
 let size=16+Math.random()*22;
 
 let type="normal";
-
-if(Math.random()<0.08) type="burst"; // ★爆発敵
+if(Math.random()<0.08) type="burst";
 
 enemies.push({
 
@@ -167,8 +166,9 @@ y:-size-Math.random()*200,
 
 size:size,
 type:type,
+exploded:false,
 
-baseSpeed:(5+Math.random()*3)*(28/size), // ★少し遅い
+baseSpeed:(5+Math.random()*3)*(28/size),
 
 speedFactor:0.06+Math.random()*0.04,
 
@@ -242,10 +242,10 @@ bullets.push({
 x:enemy.x,
 y:enemy.y,
 
-vx:Math.cos(angle)*4,
-vy:Math.sin(angle)*4,
+vx:Math.cos(angle)*5.5,
+vy:Math.sin(angle)*5.5,
 
-size:8
+size:5
 
 });
 }
@@ -260,7 +260,8 @@ ctx.clearRect(0,0,canvas.width,canvas.height);
 player.y=canvas.height-60;
 
 if(player.x<player.size/2)player.x=player.size/2;
-if(player.x>canvas.width-player.size/2)player.x=canvas.width-player.size/2;
+if(player.x>canvas.width-player.size/2)
+player.x=canvas.width-player.size/2;
 
 if(isInvincible){
 ctx.fillStyle="white";
@@ -290,14 +291,11 @@ enemy.vTimer=10;
 }
 
 if(enemy.vTimer>0){
-
 dynamicSpeed*=0.3;
 enemy.vTimer--;
-
-}else if(enemy.vFeinted){
-
+}
+else if(enemy.vFeinted){
 dynamicSpeed*=2;
-
 }
 
 enemy.y+=dynamicSpeed+globalSpeed*0.3;
@@ -319,6 +317,16 @@ ctx.fillStyle="red";
 
 ctx.arc(enemy.x,enemy.y,enemy.size/2,0,Math.PI*2);
 ctx.fill();
+
+if(enemy.type==="burst" && enemy.y>canvas.height*0.6 && !enemy.exploded){
+
+spawnBurst(enemy);
+enemy.exploded=true;
+
+enemies.splice(i,1);
+continue;
+
+}
 
 let dx=player.x-enemy.x;
 let dy=player.y-enemy.y;
@@ -352,15 +360,12 @@ continue;
 gameRunning=false;
 
 if(score>highScore){
-
 highScore=Math.floor(score);
 localStorage.setItem("neonHighScore",highScore);
-
 }
 
 document.getElementById("finalScore").innerText=
-"FINAL SCORE:"+Math.floor(score)+
-"  HIGH:"+highScore;
+"FINAL SCORE:"+Math.floor(score)+" HIGH:"+highScore;
 
 document.getElementById("gameOver").classList.remove("hidden");
 
@@ -369,13 +374,7 @@ document.getElementById("gameOver").classList.remove("hidden");
 }
 
 if(enemy.y>canvas.height){
-
-if(enemy.type==="burst"){
-spawnBurst(enemy);
-}
-
 enemies.splice(i,1);
-
 }
 
 }
@@ -400,7 +399,6 @@ let dist=Math.sqrt(dx*dx+dy*dy);
 if(!isInvincible && dist<player.size/2+b.size){
 
 gameRunning=false;
-
 document.getElementById("gameOver").classList.remove("hidden");
 
 }
