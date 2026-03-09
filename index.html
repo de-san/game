@@ -238,10 +238,7 @@ size:5
 
 function let killerCount = 1 + Math.floor(score/200);
 killerCount = Math.min(killerCount,5);
-
-for(let i=0;i<killerCount;i++){
-spawnKillerEnemy();
-}
+for(let i=0;i<killerCount;i++){spawnKillerEnemy();}
 
 killerEnemies.push({
 
