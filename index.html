@@ -105,8 +105,6 @@ window.addEventListener("resize",resizeCanvas);
 
 let player,enemies,items,bullets,killerEnemies;
 
-let gridOffset=0;
-
 let gameRunning=false;
 let lastMouseX=null;
 
@@ -237,16 +235,14 @@ size:5
 }
 }
 
-function let killerCount = 1 + Math.floor(score/200);
-killerCount = Math.min(killerCount,5);
-for(let i=0;i<killerCount;i++){spawnKillerEnemy();}
+function spawnKillerEnemy(){
 
 killerEnemies.push({
 
 x:Math.random()*canvas.width,
 y:-20,
 size:10,
-speed:60,
+speed:100,
 
 warning:true,
 timer:30
@@ -264,7 +260,9 @@ const rect=canvas.getBoundingClientRect();
 let currentX=e.clientX-rect.left;
 
 if(lastMouseX!==null){
+
 player.x+=currentX-lastMouseX;
+
 }
 
 lastMouseX=currentX;
@@ -284,7 +282,9 @@ const rect=canvas.getBoundingClientRect();
 let touchX=e.touches[0].clientX-rect.left;
 
 if(lastMouseX!==null){
+
 player.x+=touchX-lastMouseX;
+
 }
 
 lastMouseX=touchX;
@@ -296,35 +296,6 @@ function update(){
 if(!gameRunning)return;
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
-
-
-
-
-/* ネオングリッド背景 */
-
-gridOffset+=0.5;
-
-ctx.strokeStyle="rgba(0,255,255,0.12)";
-ctx.lineWidth=1;
-
-let size=60;
-
-for(let x=0;x<canvas.width;x+=size){
-ctx.beginPath();
-ctx.moveTo(x,0);
-ctx.lineTo(x,canvas.height);
-ctx.stroke();
-}
-
-for(let y=-size;y<canvas.height+size;y+=size){
-ctx.beginPath();
-ctx.moveTo(0,y+gridOffset%size);
-ctx.lineTo(canvas.width,y+gridOffset%size);
-ctx.stroke();
-}
-
-
-
 
 player.y=canvas.height-60;
 
@@ -359,8 +330,10 @@ Math.sin(enemy.y*enemy.speedFactor)*2;
 enemy.y+=dynamicSpeed+globalSpeed*0.3;
 
 if(enemy.isFeint && !enemy.feinted && enemy.y>canvas.height/3){
+
 enemy.x+=enemy.feintPower;
 enemy.feinted=true;
+
 }
 
 ctx.beginPath();
@@ -369,10 +342,12 @@ ctx.arc(enemy.x,enemy.y,enemy.size/2,0,Math.PI*2);
 ctx.fill();
 
 if(enemy.type==="burst" && enemy.y>canvas.height*0.6 && !enemy.exploded){
+
 spawnBurst(enemy);
 enemy.exploded=true;
 enemies.splice(i,1);
 continue;
+
 }
 
 let dx=player.x-enemy.x;
@@ -383,15 +358,18 @@ let dist=Math.sqrt(dx*dx+dy*dy);
 if(!isInvincible && dist<player.size/2+enemy.size/2){
 
 if(shieldCount>0){
+
 shieldCount--;
 enemies.splice(i,1);
 updateHUD();
 continue;
+
 }
 
 if(Math.random()<0.5){
 
 shieldCount=1;
+
 isInvincible=true;
 invincibleTimer=300;
 
@@ -408,7 +386,9 @@ gameOver();
 }
 
 if(enemy.y>canvas.height){
+
 enemies.splice(i,1);
+
 }
 
 }
@@ -436,10 +416,12 @@ let dist=Math.sqrt(dx*dx+dy*dy);
 if(!isInvincible && dist<player.size/2+b.size){
 
 if(shieldCount>0){
+
 shieldCount--;
 bullets.splice(i,1);
 updateHUD();
 continue;
+
 }
 
 if(Math.random()<0.5){
@@ -480,6 +462,8 @@ if(k.warning){
 
 k.timer--;
 
+/* 点滅 */
+
 if(Math.floor(Date.now()/150)%2){
 ctx.strokeStyle="white";
 }else{
@@ -492,6 +476,8 @@ ctx.beginPath();
 ctx.moveTo(k.x,0);
 ctx.lineTo(k.x,canvas.height);
 ctx.stroke();
+
+/* マーカー */
 
 ctx.beginPath();
 ctx.fillStyle="white";
@@ -506,6 +492,8 @@ continue;
 
 }
 
+/* 落下 */
+
 k.y+=k.speed;
 
 ctx.beginPath();
@@ -519,11 +507,15 @@ let dy=player.y-k.y;
 let dist=Math.sqrt(dx*dx+dy*dy);
 
 if(dist<player.size/2+k.size){
+
 gameOver();
+
 }
 
 if(k.y>canvas.height+40){
+
 killerEnemies.splice(i,1);
+
 }
 
 }
@@ -560,7 +552,9 @@ updateHUD();
 }
 
 if(item.y>canvas.height+30){
+
 items.splice(i,1);
+
 }
 
 }
@@ -601,8 +595,10 @@ spawnInterval=Math.max(80,240-gameTime*0.05);
 spawnTimer++;
 
 if(spawnTimer>spawnInterval/16){
+
 spawnEnemy();
 spawnTimer=0;
+
 }
 
 globalSpeed+=0.002;
