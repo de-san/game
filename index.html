@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -160,8 +159,10 @@ updateHUD();
 }
 
 function updateHUD(){
+
 document.getElementById("hud").innerText=
 "SCORE:"+Math.floor(score)+" HIGH:"+highScore+" SHIELD:"+shieldCount+"/3";
+
 }
 
 function spawnEnemy(){
@@ -175,9 +176,11 @@ for(let i=0;i<spawnCount;i++){
 let size=16+Math.random()*22;
 
 let type="normal";
+
 if(Math.random()<0.08) type="burst";
 
 enemies.push({
+
 x:Math.random()*canvas.width,
 y:-size-Math.random()*200,
 
@@ -192,54 +195,61 @@ speedFactor:0.06+Math.random()*0.04,
 isFeint:Math.random()<0.6,
 feinted:false,
 feintPower:(Math.random()*240)-120
+
 });
 }
 
 if(Math.random()<0.15){
 
 items.push({
+
 x:Math.random()*canvas.width,
 y:-20,
 size:20,
 speed:4
+
 });
 
 }
 }
 
-/* 爆発弾（スコアで増加） */
-
 function spawnBurst(enemy){
 
-let count=6+Math.floor(score/60);
-count=Math.min(count,20);
+let count=10;
 
 for(let i=0;i<count;i++){
 
 let angle=(Math.PI*2/count)*i;
 
 bullets.push({
+
 x:enemy.x,
 y:enemy.y,
+
 vx:Math.cos(angle)*5.5,
 vy:Math.sin(angle)*5.5,
-size:5
-});
-}
-}
 
-/* 即死敵（警告0.5秒） */
+size:5
+
+});
+
+}
+}
 
 function spawnKillerEnemy(){
 
 killerEnemies.push({
+
 x:Math.random()*canvas.width,
 y:-20,
 size:10,
 speed:60,
+
 warning:true,
 timer:30
+
 });
+
 }
 
 canvas.addEventListener("mousemove",e=>{
@@ -247,6 +257,7 @@ canvas.addEventListener("mousemove",e=>{
 if(!gameRunning)return;
 
 const rect=canvas.getBoundingClientRect();
+
 let currentX=e.clientX-rect.left;
 
 if(lastMouseX!==null){
@@ -266,6 +277,7 @@ if(!gameRunning)return;
 e.preventDefault();
 
 const rect=canvas.getBoundingClientRect();
+
 let touchX=e.touches[0].clientX-rect.left;
 
 if(lastMouseX!==null){
@@ -276,15 +288,16 @@ lastMouseX=touchX;
 
 });
 
-/* メインループ */
-
 function update(){
 
 if(!gameRunning)return;
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-/* ネオングリッド */
+
+
+
+/* ネオングリッド背景 */
 
 gridOffset+=0.5;
 
@@ -307,29 +320,279 @@ ctx.lineTo(canvas.width,y+gridOffset%size);
 ctx.stroke();
 }
 
+
+
+
 player.y=canvas.height-60;
 
 if(player.x<player.size/2)player.x=player.size/2;
 if(player.x>canvas.width-player.size/2)
 player.x=canvas.width-player.size/2;
 
-if(isInvincible) ctx.fillStyle="white";
-else if(shieldCount>0) ctx.fillStyle="yellow";
-else ctx.fillStyle="cyan";
+if(isInvincible){
+ctx.fillStyle="white";
+}
+else if(shieldCount>0){
+ctx.fillStyle="yellow";
+}
+else{
+ctx.fillStyle="cyan";
+}
 
 ctx.fillRect(player.x-player.size/2,player.y-player.size/2,player.size,player.size);
+
+
+
+/* 敵 */
+
+for(let i=enemies.length-1;i>=0;i--){
+
+let enemy=enemies[i];
+
+let dynamicSpeed=
+enemy.baseSpeed+
+Math.sin(enemy.y*enemy.speedFactor)*2;
+
+enemy.y+=dynamicSpeed+globalSpeed*0.3;
+
+if(enemy.isFeint && !enemy.feinted && enemy.y>canvas.height/3){
+enemy.x+=enemy.feintPower;
+enemy.feinted=true;
+}
+
+ctx.beginPath();
+ctx.fillStyle=(enemy.type==="burst")?"purple":"red";
+ctx.arc(enemy.x,enemy.y,enemy.size/2,0,Math.PI*2);
+ctx.fill();
+
+if(enemy.type==="burst" && enemy.y>canvas.height*0.6 && !enemy.exploded){
+spawnBurst(enemy);
+enemy.exploded=true;
+enemies.splice(i,1);
+continue;
+}
+
+let dx=player.x-enemy.x;
+let dy=player.y-enemy.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(!isInvincible && dist<player.size/2+enemy.size/2){
+
+if(shieldCount>0){
+shieldCount--;
+enemies.splice(i,1);
+updateHUD();
+continue;
+}
+
+if(Math.random()<0.5){
+
+shieldCount=1;
+isInvincible=true;
+invincibleTimer=300;
+
+showRevive();
+
+enemies.splice(i,1);
+
+continue;
+
+}
+
+gameOver();
+
+}
+
+if(enemy.y>canvas.height){
+enemies.splice(i,1);
+}
+
+}
+
+
+
+/* 爆発弾 */
+
+for(let i=bullets.length-1;i>=0;i--){
+
+let b=bullets[i];
+
+b.x+=b.vx;
+b.y+=b.vy;
+
+ctx.beginPath();
+ctx.fillStyle="orange";
+ctx.arc(b.x,b.y,b.size,0,Math.PI*2);
+ctx.fill();
+
+let dx=player.x-b.x;
+let dy=player.y-b.y;
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(!isInvincible && dist<player.size/2+b.size){
+
+if(shieldCount>0){
+shieldCount--;
+bullets.splice(i,1);
+updateHUD();
+continue;
+}
+
+if(Math.random()<0.5){
+
+shieldCount=1;
+isInvincible=true;
+invincibleTimer=300;
+showRevive();
+bullets.splice(i,1);
+continue;
+
+}
+
+gameOver();
+
+}
+
+if(
+b.x<-50 ||
+b.x>canvas.width+50 ||
+b.y<-50 ||
+b.y>canvas.height+50
+){
+bullets.splice(i,1);
+}
+
+}
+
+
+
+/* 即死敵 */
+
+for(let i=killerEnemies.length-1;i>=0;i--){
+
+let k=killerEnemies[i];
+
+if(k.warning){
+
+k.timer--;
+
+if(Math.floor(Date.now()/150)%2){
+ctx.strokeStyle="white";
+}else{
+ctx.strokeStyle="red";
+}
+
+ctx.lineWidth=3;
+
+ctx.beginPath();
+ctx.moveTo(k.x,0);
+ctx.lineTo(k.x,canvas.height);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.fillStyle="white";
+ctx.arc(k.x,30,10,0,Math.PI*2);
+ctx.fill();
+
+if(k.timer<=0){
+k.warning=false;
+}
+
+continue;
+
+}
+
+k.y+=k.speed;
+
+ctx.beginPath();
+ctx.fillStyle="white";
+ctx.arc(k.x,k.y,k.size,0,Math.PI*2);
+ctx.fill();
+
+let dx=player.x-k.x;
+let dy=player.y-k.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<player.size/2+k.size){
+gameOver();
+}
+
+if(k.y>canvas.height+40){
+killerEnemies.splice(i,1);
+}
+
+}
+
+
+
+/* アイテム */
+
+for(let i=items.length-1;i>=0;i--){
+
+let item=items[i];
+
+item.y+=item.speed;
+
+ctx.beginPath();
+ctx.fillStyle="yellow";
+ctx.arc(item.x,item.y,item.size,0,Math.PI*2);
+ctx.fill();
+
+let dx=player.x-item.x;
+let dy=player.y-item.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<player.size/2+item.size){
+
+if(shieldCount<MAX_SHIELD){
+shieldCount++;
+}
+
+items.splice(i,1);
+updateHUD();
+
+}
+
+if(item.y>canvas.height+30){
+items.splice(i,1);
+}
+
+}
+
+
+
+/* 無敵タイマー */
+
+if(isInvincible){
+
+invincibleTimer--;
+
+if(invincibleTimer<=0){
+isInvincible=false;
+}
+
+}
+
+
 
 /* スコア */
 
 score+=0.12;
+
 let currentScore=Math.floor(score);
 
 if(currentScore%50===0 && currentScore!==0 && currentScore!==lastScoreCheck){
+
 spawnKillerEnemy();
 lastScoreCheck=currentScore;
+
 }
 
 gameTime++;
+
 spawnInterval=Math.max(80,240-gameTime*0.05);
 
 spawnTimer++;
@@ -346,8 +609,6 @@ updateHUD();
 requestAnimationFrame(update);
 
 }
-
-/* REVIVE表示 */
 
 function showRevive(){
 
