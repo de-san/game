@@ -22,7 +22,6 @@ display:block;
 position:absolute;
 top:50%;
 left:50%;
-left:50%;
 transform:translate(-50%,-50%);
 text-align:center;
 max-width:500px;
@@ -71,7 +70,7 @@ display:none;
 黄色アイテムでシールド（最大3）<br>
 被弾時50%で復活＋5秒無敵<br>
 紫の敵は爆発弾<br>
-スコア50ごとに即死敵
+スコア50ごとに警告付き即死敵
 </p>
 
 <button onclick="startGame()">START</button>
@@ -243,7 +242,10 @@ killerEnemies.push({
 x:Math.random()*canvas.width,
 y:-20,
 size:10,
-speed:45
+speed:60,
+
+warning:true,
+timer:120
 
 });
 
@@ -312,7 +314,6 @@ ctx.fillStyle="cyan";
 }
 
 ctx.fillRect(player.x-player.size/2,player.y-player.size/2,player.size,player.size);
-
 
 
 
@@ -457,6 +458,42 @@ for(let i=killerEnemies.length-1;i>=0;i--){
 
 let k=killerEnemies[i];
 
+if(k.warning){
+
+k.timer--;
+
+/* 点滅 */
+
+if(Math.floor(Date.now()/150)%2){
+ctx.strokeStyle="white";
+}else{
+ctx.strokeStyle="red";
+}
+
+ctx.lineWidth=3;
+
+ctx.beginPath();
+ctx.moveTo(k.x,0);
+ctx.lineTo(k.x,canvas.height);
+ctx.stroke();
+
+/* マーカー */
+
+ctx.beginPath();
+ctx.fillStyle="white";
+ctx.arc(k.x,30,10,0,Math.PI*2);
+ctx.fill();
+
+if(k.timer<=0){
+k.warning=false;
+}
+
+continue;
+
+}
+
+/* 落下 */
+
 k.y+=k.speed;
 
 ctx.beginPath();
@@ -531,9 +568,7 @@ if(isInvincible){
 invincibleTimer--;
 
 if(invincibleTimer<=0){
-
 isInvincible=false;
-
 }
 
 }
@@ -552,8 +587,6 @@ spawnKillerEnemy();
 lastScoreCheck=currentScore;
 
 }
-
-
 
 gameTime++;
 
@@ -576,8 +609,6 @@ requestAnimationFrame(update);
 
 }
 
-
-
 function showRevive(){
 
 const revive=document.getElementById("reviveText");
@@ -589,8 +620,6 @@ revive.style.display="none";
 },800);
 
 }
-
-
 
 function gameOver(){
 
@@ -608,8 +637,6 @@ document.getElementById("gameOver").classList.remove("hidden");
 
 }
 
-
-
 function startGame(){
 
 document.getElementById("startScreen").classList.add("hidden");
@@ -623,8 +650,6 @@ lastMouseX=null;
 update();
 
 }
-
-
 
 function restartGame(){
 
