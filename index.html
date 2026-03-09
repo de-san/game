@@ -249,47 +249,11 @@ size:10,
 speed:60,
 
 warning:true,
-timer:30   // 0.5秒警告
+timer:30
 
 });
 
 }
-
-canvas.addEventListener("mousemove",e=>{
-
-if(!gameRunning)return;
-
-const rect=canvas.getBoundingClientRect();
-
-let currentX=e.clientX-rect.left;
-
-if(lastMouseX!==null){
-player.x+=currentX-lastMouseX;
-}
-
-lastMouseX=currentX;
-
-});
-
-canvas.addEventListener("mouseleave",()=>lastMouseX=null);
-
-canvas.addEventListener("touchmove",e=>{
-
-if(!gameRunning)return;
-
-e.preventDefault();
-
-const rect=canvas.getBoundingClientRect();
-
-let touchX=e.touches[0].clientX-rect.left;
-
-if(lastMouseX!==null){
-player.x+=touchX-lastMouseX;
-}
-
-lastMouseX=touchX;
-
-});
 
 function update(){
 
@@ -297,26 +261,7 @@ if(!gameRunning)return;
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-gridOffset+=0.5;
-
-ctx.strokeStyle="rgba(0,255,255,0.12)";
-ctx.lineWidth=1;
-
-let size=60;
-
-for(let x=0;x<canvas.width;x+=size){
-ctx.beginPath();
-ctx.moveTo(x,0);
-ctx.lineTo(x,canvas.height);
-ctx.stroke();
-}
-
-for(let y=-size;y<canvas.height+size;y+=size){
-ctx.beginPath();
-ctx.moveTo(0,y+gridOffset%size);
-ctx.lineTo(canvas.width,y+gridOffset%size);
-ctx.stroke();
-}
+/* プレイヤー */
 
 player.y=canvas.height-60;
 
@@ -328,6 +273,60 @@ ctx.fillStyle=isInvincible?"white":shieldCount>0?"yellow":"cyan";
 
 ctx.fillRect(player.x-player.size/2,player.y-player.size/2,player.size,player.size);
 
+/* 敵 */
+
+for(let i=enemies.length-1;i>=0;i--){
+
+let enemy=enemies[i];
+
+enemy.y+=enemy.baseSpeed+globalSpeed*0.3;
+
+ctx.beginPath();
+ctx.fillStyle=(enemy.type==="burst")?"purple":"red";
+ctx.arc(enemy.x,enemy.y,enemy.size/2,0,Math.PI*2);
+ctx.fill();
+
+if(enemy.type==="burst" && enemy.y>canvas.height*0.6 && !enemy.exploded){
+spawnBurst(enemy);
+enemy.exploded=true;
+enemies.splice(i,1);
+continue;
+}
+
+let dx=player.x-enemy.x;
+let dy=player.y-enemy.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(!isInvincible && dist<player.size/2+enemy.size/2){
+
+if(shieldCount>0){
+shieldCount--;
+enemies.splice(i,1);
+updateHUD();
+continue;
+}
+
+if(Math.random()<0.5){
+
+shieldCount=1;
+isInvincible=true;
+invincibleTimer=300;
+
+enemies.splice(i,1);
+continue;
+
+}
+
+gameOver();
+
+}
+
+if(enemy.y>canvas.height){
+enemies.splice(i,1);
+}
+
+}
 
 /* 即死敵 */
 
@@ -339,12 +338,7 @@ if(k.warning){
 
 k.timer--;
 
-if(Math.floor(Date.now()/150)%2){
-ctx.strokeStyle="white";
-}else{
-ctx.strokeStyle="red";
-}
-
+ctx.strokeStyle=Math.floor(Date.now()/150)%2?"white":"red";
 ctx.lineWidth=3;
 
 ctx.beginPath();
@@ -382,7 +376,6 @@ killerEnemies.splice(i,1);
 
 }
 
-
 /* スコア */
 
 score+=0.12;
@@ -392,7 +385,6 @@ let currentScore=Math.floor(score);
 if(currentScore%50===0 && currentScore!==0 && currentScore!==lastScoreCheck){
 
 let killerCount=1+Math.floor(score/200);
-
 killerCount=Math.min(killerCount,5);
 
 for(let i=0;i<killerCount;i++){
@@ -432,8 +424,6 @@ document.getElementById("startScreen").classList.add("hidden");
 initGame();
 
 gameRunning=true;
-
-lastMouseX=null;
 
 update();
 
