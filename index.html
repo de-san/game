@@ -6,65 +6,24 @@
 <title>NEON DODGE X</title>
 
 <style>
-body{
-margin:0;
-overflow:hidden;
-background:black;
-color:white;
-font-family:sans-serif;
-}
-
+body{margin:0;overflow:hidden;background:black;color:white;font-family:sans-serif;}
 canvas{display:block;}
-
-.overlay{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-text-align:center;
-max-width:500px;
-}
-
-button{
-margin-top:20px;
-padding:10px 25px;
-font-size:18px;
-}
-
+.overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;max-width:500px;}
+button{margin-top:20px;padding:10px 25px;font-size:18px;}
 .hidden{display:none;}
-
-.hud{
-position:absolute;
-top:10px;
-left:10px;
-font-size:16px;
-}
-
-.reviveText{
-position:absolute;
-top:40%;
-left:50%;
-transform:translate(-50%,-50%);
-font-size:50px;
-color:lime;
-display:none;
-}
+.hud{position:absolute;top:10px;left:10px;font-size:16px;}
+.reviveText{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:50px;color:lime;display:none;}
 </style>
 </head>
 
 <body>
 
 <canvas id="gameCanvas"></canvas>
-
 <div id="reviveText" class="reviveText">REVIVE!</div>
 
 <div id="startScreen" class="overlay">
 <h1>NEON DODGE X</h1>
-<p>
-マウス / 指で左右移動できるよ<br>
-赤い敵は避けろ<br>
-黄色アイテムはバリアを付与してくれる<br>
-</p>
+<p>マウス / 指で左右移動できるよ<br>赤い敵は避けろ<br>黄色アイテムはバリアを付与してくれる<br></p>
 <button onclick="startGame()">START</button>
 </div>
 
@@ -74,9 +33,7 @@ display:none;
 <button onclick="restartGame()">RESTART</button>
 </div>
 
-<div class="hud" id="hud">
-SCORE:0
-</div>
+<div class="hud" id="hud">SCORE:0</div>
 
 <script>
 
@@ -115,11 +72,7 @@ let lastScoreCheck=0;
 
 function initGame(){
 
-player={
-x:canvas.width/2,
-y:canvas.height-60,
-size:20
-};
+player={x:canvas.width/2,y:canvas.height-60,size:20};
 
 enemies=[];
 items=[];
@@ -141,7 +94,7 @@ invincibleTimer=0;
 
 lastScoreCheck=0;
 
-highScore=localStorage.getItem("neonHighScore")||0;
+highScore=Number(localStorage.getItem("neonHighScore"))||0;
 
 updateHUD();
 }
@@ -161,28 +114,21 @@ let spawnCount=Math.min(4,1+Math.floor(gameTime/1400));
 for(let i=0;i<spawnCount;i++){
 
 let size=16+Math.random()*22;
-
 let type="normal";
 
 if(Math.random()<0.08) type="burst";
 
 enemies.push({
-
 x:Math.random()*canvas.width,
 y:-size-Math.random()*200,
-
 size:size,
 type:type,
 exploded:false,
-
 baseSpeed:(5+Math.random()*3)*(28/size),
-
 speedFactor:0.06+Math.random()*0.04,
-
 isFeint:Math.random()<0.6,
 feinted:false,
 feintPower:(Math.random()*240)-120
-
 });
 }
 
@@ -192,30 +138,24 @@ spawnCloneEnemy();
 }
 
 if(Math.random()<0.15){
-
 items.push({
 x:Math.random()*canvas.width,
 y:-20,
 size:20,
 speed:8
 });
-
 }
 }
 
 /* ===== 分身敵 ===== */
-
 function spawnCloneEnemy(){
 
 let size=18+Math.random()*20;
 
 cloneEnemies.push({
-
 x:Math.random()*canvas.width,
 y:-size,
-
 size:size,
-
 baseSpeed:(5+Math.random()*2)*(28/size),
 speedFactor:0.05+Math.random()*0.05,
 
@@ -233,7 +173,6 @@ stopping:false,
 dash:false,
 
 swapTimer:60+Math.random()*120
-
 });
 }
 
@@ -242,95 +181,63 @@ function createClones(enemy){
 let count = 3 + Math.floor(Math.random()*4);
 
 for(let i=0;i<count;i++){
-
 enemy.clones.push({
-
 offsetX:(Math.random()*240)-120,
 offsetY:(Math.random()*160)-80,
-
 vx:(Math.random()*2)-1,
 vy:(Math.random()*2)-1
-
 });
-
 }
 }
 
 /* ===== 爆発 ===== */
 function spawnBurst(enemy){
-
 let count=10;
-
 for(let i=0;i<count;i++){
-
 let angle=(Math.PI*2/count)*i;
-
 bullets.push({
-
 x:enemy.x,
 y:enemy.y,
-
 vx:Math.cos(angle)*5.5,
 vy:Math.sin(angle)*5.5,
-
 size:5
-
 });
-
 }
 }
 
 function spawnKillerEnemy(){
-
 killerEnemies.push({
-
 x:Math.random()*canvas.width,
 y:-20,
 size:10,
 speed:100000,
-
 warning:true,
 timer:7
-
 });
-
 }
 
 /* ===== 操作 ===== */
 canvas.addEventListener("mousemove",e=>{
-
 if(!gameRunning)return;
-
 const rect=canvas.getBoundingClientRect();
-
 let currentX=e.clientX-rect.left;
-
 if(lastMouseX!==null){
 player.x+=currentX-lastMouseX;
 }
-
 lastMouseX=currentX;
-
 });
 
 canvas.addEventListener("mouseleave",()=>lastMouseX=null);
 
 canvas.addEventListener("touchmove",e=>{
-
 if(!gameRunning)return;
-
 e.preventDefault();
-
 const rect=canvas.getBoundingClientRect();
-
 let touchX=e.touches[0].clientX-rect.left;
-
 if(lastMouseX!==null){
 player.x+=touchX-lastMouseX;
 }
-
 lastMouseX=touchX;
-
 });
 
 /* ===== メインループ ===== */
@@ -400,19 +307,17 @@ continue;
 }
 
 gameOver();
-
 }
 
 if(enemy.y>canvas.height){
 enemies.splice(i,1);
 }
-
 }
 
 /* ===== 分身敵 ===== */
 for(let i=cloneEnemies.length-1;i>=0;i--){
 
-let enemy=cloneEnemies[i;
+let enemy=cloneEnemies[i];
 
 let dynamicSpeed=
 enemy.baseSpeed+
@@ -453,7 +358,6 @@ enemy.hasCloned=true;
 
 /* 入れ替え */
 enemy.swapTimer--;
-
 if(enemy.swapTimer<=0 && enemy.clones.length>0){
 
 let c=enemy.clones[Math.floor(Math.random()*enemy.clones.length)];
@@ -475,16 +379,12 @@ ctx.fill();
 
 /* 分身 */
 ctx.fillStyle="rgba(0,255,255,0.25)";
-
 for(let c of enemy.clones){
-
 c.offsetX+=c.vx;
 c.offsetY+=c.vy;
-
 ctx.beginPath();
 ctx.arc(enemy.x+c.offsetX,enemy.y+c.offsetY,enemy.size/2,0,Math.PI*2);
 ctx.fill();
-
 }
 
 /* 判定 */
@@ -511,21 +411,19 @@ continue;
 }
 
 gameOver();
-
 }
 
 if(enemy.y>canvas.height){
 cloneEnemies.splice(i,1);
 }
-
 }
 
-/* ===== 以下すべて元コードそのまま ===== */
-
+/* ===== 爆発弾 ===== */
 for(let i=bullets.length-1;i>=0;i--){
 let b=bullets[i];
 b.x+=b.vx;
 b.y+=b.vy;
+
 ctx.beginPath();
 ctx.fillStyle="orange";
 ctx.arc(b.x,b.y,b.size,0,Math.PI*2);
@@ -556,12 +454,177 @@ continue;
 gameOver();
 }
 
-if(b.x<-50||b.x>canvas.width+50||b.y<-50||b.y>canvas.height+50){
+if(
+b.x<-50 ||
+b.x>canvas.width+50 ||
+b.y<-50 ||
+b.y>canvas.height+50
+){
 bullets.splice(i,1);
 }
 }
 
-/* （以下略：完全に元コードのまま続く） */
+/* ===== 即死敵 ===== */
+for(let i=killerEnemies.length-1;i>=0;i--){
+
+let k=killerEnemies[i];
+
+if(k.warning){
+
+k.timer--;
+
+if(Math.floor(Date.now()/150)%2){
+ctx.strokeStyle="white";
+}else{
+ctx.strokeStyle="red";
+}
+
+ctx.lineWidth=3;
+
+ctx.beginPath();
+ctx.moveTo(k.x,0);
+ctx.lineTo(k.x,canvas.height);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.fillStyle="white";
+ctx.arc(k.x,30,10,0,Math.PI*2);
+ctx.fill();
+
+if(k.timer<=0){
+k.warning=false;
+}
+
+continue;
+}
+
+k.y+=k.speed;
+
+ctx.beginPath();
+ctx.fillStyle="white";
+ctx.arc(k.x,k.y,k.size,0,Math.PI*2);
+ctx.fill();
+
+let dx=player.x-k.x;
+let dy=player.y-k.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<player.size/2+k.size){
+gameOver();
+}
+
+if(k.y>canvas.height+40){
+killerEnemies.splice(i,1);
+}
+}
+
+/* ===== アイテム ===== */
+for(let i=items.length-1;i>=0;i--){
+
+let item=items[i];
+
+item.y+=item.speed;
+
+ctx.beginPath();
+ctx.fillStyle="yellow";
+ctx.arc(item.x,item.y,item.size,0,Math.PI*2);
+ctx.fill();
+
+let dx=player.x-item.x;
+let dy=player.y-item.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<player.size/2+item.size){
+
+if(shieldCount<MAX_SHIELD){
+shieldCount++;
+}
+
+items.splice(i,1);
+updateHUD();
+
+}
+
+if(item.y>canvas.height+30){
+items.splice(i,1);
+}
+}
+
+/* ===== 無敵タイマー ===== */
+if(isInvincible){
+invincibleTimer--;
+if(invincibleTimer<=0){
+isInvincible=false;
+}
+}
+
+/* ===== スコア ===== */
+score+=0.12;
+
+let currentScore=Math.floor(score);
+
+if(currentScore%50===0 && currentScore!==0 && currentScore!==lastScoreCheck){
+spawnKillerEnemy();
+lastScoreCheck=currentScore;
+}
+
+gameTime++;
+
+spawnInterval=Math.max(80,240-gameTime*0.05);
+
+spawnTimer++;
+
+if(spawnTimer>spawnInterval/16){
+spawnEnemy();
+spawnTimer=0;
+}
+
+globalSpeed+=0.002;
+
+updateHUD();
+
+requestAnimationFrame(update);
+
+}
+
+function showRevive(){
+const revive=document.getElementById("reviveText");
+revive.style.display="block";
+setTimeout(()=>{
+revive.style.display="none";
+},800);
+}
+
+function gameOver(){
+gameRunning=false;
+
+if(score>highScore){
+highScore=Math.floor(score);
+localStorage.setItem("neonHighScore",highScore);
+}
+
+document.getElementById("finalScore").innerText=
+"FINAL SCORE:"+Math.floor(score)+" HIGH:"+highScore;
+
+document.getElementById("gameOver").classList.remove("hidden");
+}
+
+function startGame(){
+document.getElementById("startScreen").classList.add("hidden");
+initGame();
+gameRunning=true;
+lastMouseX=null;
+update();
+}
+
+function restartGame(){
+document.getElementById("gameOver").classList.add("hidden");
+initGame();
+gameRunning=true;
+update();
+}
 
 </script>
 
