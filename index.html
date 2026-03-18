@@ -67,10 +67,7 @@ display:none;
 <p>
 マウス / 指で左右移動できるよ<br>
 赤い敵は避けろ<br>
-黄色アイテムでシールドをつけれる<br>
-攻撃を食らっても50%で復活して5秒無敵になれる<br>
-紫の敵は爆発する<br>
-スコア50ごとに警告付きの無敵貫通攻撃が来る
+黄色アイテムはバリアを付与してくれる<br>
 </p>
 
 <button onclick="startGame()">START</button>
@@ -130,7 +127,7 @@ function initGame(){
 player={
 x:canvas.width/2,
 y:canvas.height-60,
-size:30
+size:20
 };
 
 enemies=[];
@@ -245,7 +242,7 @@ size:10,
 speed:100000,
 
 warning:true,
-timer:5
+timer:7
 
 });
 
