@@ -319,6 +319,10 @@ for(let i=cloneEnemies.length-1;i>=0;i--){
 
 let enemy=cloneEnemies[i];
 
+/* 本体にも微振動 */
+enemy.x += Math.sin(Date.now()/120 + enemy.y) * 0.8;
+enemy.y += Math.cos(Date.now()/140 + enemy.x) * 0.6;
+
 /* 基本スピード */
 let dynamicSpeed =
 enemy.baseSpeed +
@@ -381,7 +385,7 @@ enemy.swapTimer = 60 + Math.random()*120;
 /* ===== 本体描画 ===== */
 ctx.beginPath();
 ctx.fillStyle="rgba(0,255,255,0.6)";
-ctx.arc(enemy.x,enemy.y,enemy.size/2,0,Math.PI*2);
+ctx.arc(enemy.x, enemy.y, drawSize/2, 0, Math.PI*2);
 ctx.fill();
 
 /* ===== 分身描画 ===== */
