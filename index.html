@@ -319,80 +319,96 @@ for(let i=cloneEnemies.length-1;i>=0;i--){
 
 let enemy=cloneEnemies[i];
 
-let dynamicSpeed=
-enemy.baseSpeed+
+/* 基本スピード */
+let dynamicSpeed =
+enemy.baseSpeed +
 Math.sin(enemy.y*enemy.speedFactor)*2;
 
-/* フェイント */
-if(enemy.isFeint && !enemy.feinted && enemy.y>canvas.height/3){
-enemy.x+=enemy.feintPower;
-enemy.feinted=true;
+/* ===== 急減速フェーズ ===== */
+if(!enemy.slowing && enemy.y > canvas.height*0.3){
+enemy.slowing = true;
+enemy.slowTimer = 40 + Math.random()*40;
 }
 
-/* 停止 */
-if(!enemy.stopping && enemy.y>enemy.stopY){
-enemy.stopping=true;
-enemy.stopTimer=40+Math.random()*40;
+if(enemy.slowing){
+
+enemy.slowTimer--;
+
+/* 徐々に減速 */
+enemy.y += (dynamicSpeed * 0.2);
+
+/* フェイントをこのタイミングで発動しやすくする */
+if(enemy.isFeint && !enemy.feinted && Math.random()<0.08){
+enemy.x += enemy.feintPower;
+enemy.feinted = true;
 }
 
-if(enemy.stopping){
-enemy.stopTimer--;
-if(enemy.stopTimer<=0){
-enemy.stopping=false;
-enemy.dash=true;
+if(enemy.slowTimer <= 0){
+enemy.slowing = false;
+enemy.dash = true;
 }
+
 }else{
-enemy.y+=dynamicSpeed+globalSpeed*0.3;
+enemy.y += dynamicSpeed + globalSpeed*0.3;
 }
 
-/* 急加速 */
+/* ===== 急加速 ===== */
 if(enemy.dash){
-enemy.y+=12;
+enemy.y += 14;
 }
 
-/* 分身生成 */
-if(!enemy.hasCloned && enemy.y>canvas.height/4){
+/* ===== 分身生成 ===== */
+if(!enemy.hasCloned && enemy.y > canvas.height/4){
 createClones(enemy);
-enemy.hasCloned=true;
+enemy.hasCloned = true;
 }
 
-/* 入れ替え */
+/* ===== 入れ替え ===== */
 enemy.swapTimer--;
-if(enemy.swapTimer<=0 && enemy.clones.length>0){
+if(enemy.swapTimer <= 0 && enemy.clones.length > 0){
 
-let c=enemy.clones[Math.floor(Math.random()*enemy.clones.length)];
+let c = enemy.clones[Math.floor(Math.random()*enemy.clones.length)];
 
-enemy.x+=c.offsetX;
-enemy.y+=c.offsetY;
+enemy.x += c.offsetX;
+enemy.y += c.offsetY;
 
-c.offsetX=-c.offsetX;
-c.offsetY=-c.offsetY;
+c.offsetX *= -1;
+c.offsetY *= -1;
 
-enemy.swapTimer=60+Math.random()*120;
+enemy.swapTimer = 60 + Math.random()*120;
 }
 
-/* 本体 */
+/* ===== 本体描画 ===== */
 ctx.beginPath();
 ctx.fillStyle="rgba(0,255,255,0.6)";
 ctx.arc(enemy.x,enemy.y,enemy.size/2,0,Math.PI*2);
 ctx.fill();
 
-/* 分身 */
+/* ===== 分身描画 ===== */
 ctx.fillStyle="rgba(0,255,255,0.25)";
+
 for(let c of enemy.clones){
-c.offsetX+=c.vx;
-c.offsetY+=c.vy;
+
+c.offsetX += c.vx;
+c.offsetY += c.vy;
+
 ctx.beginPath();
-ctx.arc(enemy.x+c.offsetX,enemy.y+c.offsetY,enemy.size/2,0,Math.PI*2);
+ctx.arc(
+enemy.x+c.offsetX,
+enemy.y+c.offsetY,
+enemy.size/2,
+0,
+Math.PI*2
+);
 ctx.fill();
 }
 
-/* 判定 */
+/* ===== 判定 ===== */
 let dx=player.x-enemy.x;
 let dy=player.y-enemy.y;
 let dist=Math.sqrt(dx*dx+dy*dy);
 
-if(!isInvincible && dist<player.size/2+enemy.size/2){
+if(!isInvincible && dist < player.size/2 + enemy.size/2){
 
 if(shieldCount>0){
 shieldCount--;
@@ -413,11 +429,12 @@ continue;
 gameOver();
 }
 
-if(enemy.y>canvas.height){
+if(enemy.y > canvas.height){
 cloneEnemies.splice(i,1);
 }
-}
 
+}
+  
 /* ===== 爆発弾 ===== */
 for(let i=bullets.length-1;i>=0;i--){
 let b=bullets[i];
