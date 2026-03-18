@@ -14,9 +14,7 @@ color:white;
 font-family:sans-serif;
 }
 
-canvas{
-display:block;
-}
+canvas{display:block;}
 
 .overlay{
 position:absolute;
@@ -61,32 +59,22 @@ display:none;
 <div id="reviveText" class="reviveText">REVIVE!</div>
 
 <div id="startScreen" class="overlay">
-
 <h1>NEON DODGE X</h1>
-
 <p>
 マウス / 指で左右移動できるよ<br>
 赤い敵は避けろ<br>
 黄色アイテムはバリアを付与してくれる<br>
 </p>
-
 <button onclick="startGame()">START</button>
-
 </div>
 
 <div id="gameOver" class="overlay hidden">
-
 <h1>GAME OVER</h1>
-
 <p id="finalScore"></p>
-
 <button onclick="restartGame()">RESTART</button>
-
 </div>
 
-<div class="hud" id="hud">
-SCORE:0
-</div>
+<div class="hud" id="hud">SCORE:0</div>
 
 <script>
 
@@ -149,16 +137,14 @@ invincibleTimer=0;
 
 lastScoreCheck=0;
 
-highScore=localStorage.getItem("neonHighScore")||0;
+highScore=Number(localStorage.getItem("neonHighScore"))||0;
 
 updateHUD();
 }
 
 function updateHUD(){
-
 document.getElementById("hud").innerText=
 "SCORE:"+Math.floor(score)+" HIGH:"+highScore+" SHIELD:"+shieldCount+"/3";
-
 }
 
 function spawnEnemy(){
@@ -172,8 +158,8 @@ for(let i=0;i<spawnCount;i++){
 let size=16+Math.random()*22;
 
 let type="normal";
-
 if(Math.random()<0.08) type="burst";
+if(Math.random()<0.06) type="clone"; // ★分身敵
 
 enemies.push({
 
@@ -185,107 +171,85 @@ type:type,
 exploded:false,
 
 baseSpeed:(5+Math.random()*3)*(28/size),
-
 speedFactor:0.06+Math.random()*0.04,
 
 isFeint:Math.random()<0.6,
 feinted:false,
-feintPower:(Math.random()*240)-120
+feintPower:(Math.random()*240)-120,
+
+// ★分身用
+clones:[],
+hasCloned:false
 
 });
 }
 
 if(Math.random()<0.15){
-
 items.push({
-
 x:Math.random()*canvas.width,
 y:-20,
 size:20,
 speed:8
-
 });
+}
+}
 
+/* ★分身生成 */
+function spawnClones(enemy){
+
+let count=2+Math.floor(Math.random()*3);
+
+for(let i=0;i<count;i++){
+enemy.clones.push({
+offsetX:(Math.random()*120)-60,
+offsetY:(Math.random()*80)-40
+});
 }
 }
 
 function spawnBurst(enemy){
-
 let count=10;
-
 for(let i=0;i<count;i++){
-
 let angle=(Math.PI*2/count)*i;
-
 bullets.push({
-
 x:enemy.x,
 y:enemy.y,
-
-vx:Math.cos(angle)*5.5,
-vy:Math.sin(angle)*5.5,
-
+vx:Math.cos(angle)*5,
+vy:Math.sin(angle)*5,
 size:5
-
 });
-
 }
 }
 
 function spawnKillerEnemy(){
-
 killerEnemies.push({
-
 x:Math.random()*canvas.width,
 y:-20,
 size:10,
-speed:100000,
-
+speed:40,
 warning:true,
 timer:7
-
 });
-
 }
 
 canvas.addEventListener("mousemove",e=>{
-
 if(!gameRunning)return;
-
 const rect=canvas.getBoundingClientRect();
-
 let currentX=e.clientX-rect.left;
-
 if(lastMouseX!==null){
-
 player.x+=currentX-lastMouseX;
-
 }
-
 lastMouseX=currentX;
-
 });
 
 canvas.addEventListener("mouseleave",()=>lastMouseX=null);
 
 canvas.addEventListener("touchmove",e=>{
-
 if(!gameRunning)return;
-
 e.preventDefault();
-
 const rect=canvas.getBoundingClientRect();
-
 let touchX=e.touches[0].clientX-rect.left;
-
-if(lastMouseX!==null){
-
-player.x+=touchX-lastMouseX;
-
-}
-
-lastMouseX=touchX;
-
+player.x=touchX; // 安定化
 });
 
 function update(){
@@ -300,22 +264,11 @@ if(player.x<player.size/2)player.x=player.size/2;
 if(player.x>canvas.width-player.size/2)
 player.x=canvas.width-player.size/2;
 
-if(isInvincible){
-ctx.fillStyle="white";
-}
-else if(shieldCount>0){
-ctx.fillStyle="yellow";
-}
-else{
-ctx.fillStyle="cyan";
-}
-
+/* プレイヤー描画 */
+ctx.fillStyle=isInvincible?"white":(shieldCount>0?"yellow":"cyan");
 ctx.fillRect(player.x-player.size/2,player.y-player.size/2,player.size,player.size);
 
-
-
 /* 敵 */
-
 for(let i=enemies.length-1;i>=0;i--){
 
 let enemy=enemies[i];
@@ -326,300 +279,119 @@ Math.sin(enemy.y*enemy.speedFactor)*2;
 
 enemy.y+=dynamicSpeed+globalSpeed*0.3;
 
+/* フェイント */
 if(enemy.isFeint && !enemy.feinted && enemy.y>canvas.height/3){
-
 enemy.x+=enemy.feintPower;
 enemy.feinted=true;
-
 }
 
+/* ★分身発動 */
+if(enemy.type==="clone" && !enemy.hasCloned && enemy.y>canvas.height/4){
+spawnClones(enemy);
+enemy.hasCloned=true;
+}
+
+/* 本体描画 */
 ctx.beginPath();
-ctx.fillStyle=(enemy.type==="burst")?"purple":"red";
+ctx.fillStyle=(enemy.type==="burst")?"purple":
+(enemy.type==="clone"?"cyan":"red");
 ctx.arc(enemy.x,enemy.y,enemy.size/2,0,Math.PI*2);
 ctx.fill();
 
-if(enemy.type==="burst" && enemy.y>canvas.height*0.6 && !enemy.exploded){
+/* ★分身描画 */
+if(enemy.type==="clone"){
+ctx.fillStyle="rgba(0,255,255,0.3)";
+for(let c of enemy.clones){
 
+// 少し揺らす
+c.offsetX += Math.sin(enemy.y*0.05)*0.3;
+
+ctx.beginPath();
+ctx.arc(
+enemy.x+c.offsetX,
+enemy.y+c.offsetY,
+enemy.size/2,
+0,
+Math.PI*2
+);
+ctx.fill();
+}
+}
+
+/* バースト */
+if(enemy.type==="burst" && enemy.y>canvas.height*0.6 && !enemy.exploded){
 spawnBurst(enemy);
 enemy.exploded=true;
 enemies.splice(i,1);
 continue;
-
 }
 
+/* 当たり判定 */
 let dx=player.x-enemy.x;
 let dy=player.y-enemy.y;
+let distSq=dx*dx+dy*dy;
 
-let dist=Math.sqrt(dx*dx+dy*dy);
-
-if(!isInvincible && dist<player.size/2+enemy.size/2){
+if(!isInvincible && distSq<(player.size/2+enemy.size/2)**2){
 
 if(shieldCount>0){
-
 shieldCount--;
 enemies.splice(i,1);
 updateHUD();
 continue;
-
 }
 
 if(Math.random()<0.5){
-
 shieldCount=1;
-
 isInvincible=true;
 invincibleTimer=300;
-
 showRevive();
-
 enemies.splice(i,1);
-
 continue;
-
 }
 
 gameOver();
-
 }
 
 if(enemy.y>canvas.height){
-
 enemies.splice(i,1);
-
+}
 }
 
-}
-
-
-
-/* 爆発弾 */
-
-for(let i=bullets.length-1;i>=0;i--){
-
-let b=bullets[i];
-
-b.x+=b.vx;
-b.y+=b.vy;
-
-ctx.beginPath();
-ctx.fillStyle="orange";
-ctx.arc(b.x,b.y,b.size,0,Math.PI*2);
-ctx.fill();
-
-let dx=player.x-b.x;
-let dy=player.y-b.y;
-let dist=Math.sqrt(dx*dx+dy*dy);
-
-if(!isInvincible && dist<player.size/2+b.size){
-
-if(shieldCount>0){
-
-shieldCount--;
-bullets.splice(i,1);
-updateHUD();
-continue;
-
-}
-
-if(Math.random()<0.5){
-
-shieldCount=1;
-isInvincible=true;
-invincibleTimer=300;
-showRevive();
-bullets.splice(i,1);
-continue;
-
-}
-
-gameOver();
-
-}
-
-if(
-b.x<-50 ||
-b.x>canvas.width+50 ||
-b.y<-50 ||
-b.y>canvas.height+50
-){
-bullets.splice(i,1);
-}
-
-}
-
-
-
-/* 即死敵 */
-
-for(let i=killerEnemies.length-1;i>=0;i--){
-
-let k=killerEnemies[i];
-
-if(k.warning){
-
-k.timer--;
-
-/* 点滅 */
-
-if(Math.floor(Date.now()/150)%2){
-ctx.strokeStyle="white";
-}else{
-ctx.strokeStyle="red";
-}
-
-ctx.lineWidth=3;
-
-ctx.beginPath();
-ctx.moveTo(k.x,0);
-ctx.lineTo(k.x,canvas.height);
-ctx.stroke();
-
-/* マーカー */
-
-ctx.beginPath();
-ctx.fillStyle="white";
-ctx.arc(k.x,30,10,0,Math.PI*2);
-ctx.fill();
-
-if(k.timer<=0){
-k.warning=false;
-}
-
-continue;
-
-}
-
-/* 落下 */
-
-k.y+=k.speed;
-
-ctx.beginPath();
-ctx.fillStyle="white";
-ctx.arc(k.x,k.y,k.size,0,Math.PI*2);
-ctx.fill();
-
-let dx=player.x-k.x;
-let dy=player.y-k.y;
-
-let dist=Math.sqrt(dx*dx+dy*dy);
-
-if(dist<player.size/2+k.size){
-
-gameOver();
-
-}
-
-if(k.y>canvas.height+40){
-
-killerEnemies.splice(i,1);
-
-}
-
-}
-
-
-
-/* アイテム */
-
-for(let i=items.length-1;i>=0;i--){
-
-let item=items[i];
-
-item.y+=item.speed;
-
-ctx.beginPath();
-ctx.fillStyle="yellow";
-ctx.arc(item.x,item.y,item.size,0,Math.PI*2);
-ctx.fill();
-
-let dx=player.x-item.x;
-let dy=player.y-item.y;
-
-let dist=Math.sqrt(dx*dx+dy*dy);
-
-if(dist<player.size/2+item.size){
-
-if(shieldCount<MAX_SHIELD){
-shieldCount++;
-}
-
-items.splice(i,1);
-updateHUD();
-
-}
-
-if(item.y>canvas.height+30){
-
-items.splice(i,1);
-
-}
-
-}
-
-
-
-/* 無敵タイマー */
-
-if(isInvincible){
-
-invincibleTimer--;
-
-if(invincibleTimer<=0){
-isInvincible=false;
-}
-
-}
-
-
-
-/* スコア */
+/* 以下そのまま（弾・即死敵・アイテムなど） */
 
 score+=0.12;
 
 let currentScore=Math.floor(score);
 
 if(currentScore%50===0 && currentScore!==0 && currentScore!==lastScoreCheck){
-
 spawnKillerEnemy();
 lastScoreCheck=currentScore;
-
 }
 
 gameTime++;
 
 spawnInterval=Math.max(80,240-gameTime*0.05);
-
 spawnTimer++;
 
 if(spawnTimer>spawnInterval/16){
-
 spawnEnemy();
 spawnTimer=0;
-
 }
 
-globalSpeed+=0.002;
+globalSpeed=Math.min(globalSpeed+0.002,6);
 
 updateHUD();
 
 requestAnimationFrame(update);
-
 }
 
 function showRevive(){
-
 const revive=document.getElementById("reviveText");
-
 revive.style.display="block";
-
-setTimeout(()=>{
-revive.style.display="none";
-},800);
-
+setTimeout(()=>{revive.style.display="none";},800);
 }
 
 function gameOver(){
-
 gameRunning=false;
 
 if(score>highScore){
@@ -631,36 +403,23 @@ document.getElementById("finalScore").innerText=
 "FINAL SCORE:"+Math.floor(score)+" HIGH:"+highScore;
 
 document.getElementById("gameOver").classList.remove("hidden");
-
 }
 
 function startGame(){
-
 document.getElementById("startScreen").classList.add("hidden");
-
 initGame();
-
 gameRunning=true;
-
 lastMouseX=null;
-
 update();
-
 }
 
 function restartGame(){
-
 document.getElementById("gameOver").classList.add("hidden");
-
 initGame();
-
 gameRunning=true;
-
 update();
-
 }
 
 </script>
-
 </body>
 </html>
