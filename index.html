@@ -407,6 +407,11 @@ Math.PI*2
 ctx.fill();
 }
 
+/* 本体をたまに薄くする */
+if(Math.random()<0.02){
+ctx.fillStyle="rgba(0,255,255,0.3)";
+}
+
 /* ===== 判定 ===== */
 let dx=player.x-enemy.x;
 let dy=player.y-enemy.y;
