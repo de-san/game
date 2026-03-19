@@ -597,8 +597,18 @@ score+=0.12;
 let currentScore=Math.floor(score);
 
 if(currentScore%50===0 && currentScore!==0 && currentScore!==lastScoreCheck){
-spawnKillerEnemy();
-lastScoreCheck=currentScore;
+
+    let spawnCount = 1 + Math.floor(score / 100); 
+    // ↑ スコア100ごとに+1体
+
+    spawnCount = Math.min(spawnCount, 6); 
+    // ↑ 上限（暴れ防止）
+
+    for(let i=0;i<spawnCount;i++){
+        spawnKillerEnemy();
+    }
+
+    lastScoreCheck=currentScore;
 }
 
 gameTime++;
