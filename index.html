@@ -383,9 +383,12 @@ enemy.swapTimer = 60 + Math.random()*120;
 }
 
 /* ===== 本体描画 ===== */
+let alpha = (Math.random()<0.02) ? 0.3 : 0.45;
 ctx.beginPath();
-ctx.fillStyle="rgba(0,255,255,0.45)";
+ctx.fillStyle=`rgba(0,255,255,${alpha})`;
+
 let drawSize = enemy.size * (0.95 + Math.random()*0.1);
+
 ctx.arc(enemy.x, enemy.y, drawSize/2, 0, Math.PI*2);
 ctx.fill();
 
@@ -396,6 +399,10 @@ for(let c of enemy.clones){
 
 c.offsetX += c.vx + Math.sin(Date.now()/200 + c.offsetY)*0.3;
 c.offsetY += c.vy + Math.cos(Date.now()/200 + c.offsetX)*0.3;
+
+/* 広がり強化はここに入れる */
+c.offsetX *= 1.01;
+c.offsetY *= 1.01;
 
 ctx.beginPath();
 ctx.arc(
@@ -408,13 +415,6 @@ Math.PI*2
 ctx.fill();
 }
 
-/* 本体をたまに薄くする */
-let alpha = (Math.random()<0.02) ? 0.3 : 0.45;
-ctx.fillStyle = `rgba(0,255,255,${alpha})`;
-
-// 分身の広がり強化
-c.offsetX *= 1.01;
-c.offsetY *= 1.01;
 
 /* ===== 判定 ===== */
 let dx=player.x-enemy.x;
