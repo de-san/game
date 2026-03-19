@@ -379,7 +379,7 @@ enemy.y += c.offsetY;
 c.offsetX *= -1;
 c.offsetY *= -1;
 
-enemy.swapTimer = 60 + Math.random()*120;
+enemy.swapTimer = 40 + Math.random()*80;
 }
 
 /* ===== 本体描画 ===== */
@@ -401,8 +401,8 @@ c.offsetX += c.vx + Math.sin(Date.now()/200 + c.offsetY)*0.3;
 c.offsetY += c.vy + Math.cos(Date.now()/200 + c.offsetX)*0.3;
 
 /* 広がり強化はここに入れる */
-c.offsetX *= 1.01;
-c.offsetY *= 1.01;
+c.offsetX *= 1.005;
+c.offsetY *= 1.005;
 
 ctx.beginPath();
 ctx.arc(
