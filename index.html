@@ -205,6 +205,7 @@ size:5
 }
 }
 
+/* ===== 即死 ===== */
 function spawnKillerEnemy(){
 killerEnemies.push({
 x:Math.random()*canvas.width,
@@ -528,19 +529,34 @@ k.warning=false;
 continue;
 }
 
-k.y+=k.speed;
+let prevY = k.y;   // ←追加（移動前を保存）
+k.y += k.speed;
 
+// 描画
 ctx.beginPath();
 ctx.fillStyle="white";
 ctx.arc(k.x,k.y,k.size,0,Math.PI*2);
 ctx.fill();
 
+// 当たり判定サイズ
+let hitSize = k.size * 3;
+
+// 通常判定
 let dx = player.x - k.x;
 let dy = player.y - k.y;
 let dist = Math.sqrt(dx*dx + dy*dy);
 
-let hitSize = k.size * 5; // ←判定拡大
+// ★すり抜け防止判定
+if(
+    player.x > k.x - hitSize &&
+    player.x < k.x + hitSize &&
+    player.y > prevY &&
+    player.y < k.y
+){
+    gameOver();
+}
 
+// 通常の円判定
 if(dist < player.size/2 + hitSize){
     gameOver();
 }
