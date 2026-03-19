@@ -535,7 +535,11 @@ ctx.fillStyle="white";
 ctx.arc(k.x,k.y,k.size,0,Math.PI*2);
 ctx.fill();
 
-let hitSize = k.size * 3; // ←倍率調整（2〜4くらいがいい）
+let dx = player.x - k.x;
+let dy = player.y - k.y;
+let dist = Math.sqrt(dx*dx + dy*dy);
+
+let hitSize = k.size * 3; // ←判定拡大
 
 if(dist < player.size/2 + hitSize){
     gameOver();
