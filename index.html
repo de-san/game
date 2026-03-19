@@ -535,13 +535,10 @@ ctx.fillStyle="white";
 ctx.arc(k.x,k.y,k.size,0,Math.PI*2);
 ctx.fill();
 
-let dx=player.x-k.x;
-let dy=player.y-k.y;
+let hitSize = k.size * 3; // ←倍率調整（2〜4くらいがいい）
 
-let dist=Math.sqrt(dx*dx+dy*dy);
-
-if(dist<player.size/2+k.size){
-gameOver();
+if(dist < player.size/2 + hitSize){
+    gameOver();
 }
 
 if(k.y>canvas.height+40){
